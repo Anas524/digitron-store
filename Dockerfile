@@ -1,5 +1,7 @@
 FROM php:8.4-cli
 
+RUN php -v
+
 # System deps
 RUN apt-get update && apt-get install -y \
     git unzip libzip-dev libpng-dev \
