@@ -1,5 +1,8 @@
 # 1) Build Vite assets
 FROM node:20-alpine AS nodebuild
+
+RUN echo "USING UPDATED DOCKERFILE - VITE BUILD OK"
+
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
