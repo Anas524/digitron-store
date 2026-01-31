@@ -31,4 +31,7 @@ COPY --from=nodebuild /app/public/build /var/www/public/build
 RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache \
  && chmod -R 775 storage bootstrap/cache || true
 
-CMD php -S 0.0.0.0:${PORT} -t public
+RUN touch /tmp/database.sqlite || true
+
+CMD sh -lc "php artisan config:clear || true && php artisan cache:clear || true && php -S 0.0.0.0:${PORT} -t public"
+
