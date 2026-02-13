@@ -1,56 +1,86 @@
 <header
     x-data="{
         open:false,
-        hidden:false,
+        scrolled:false,
         lastY:0,
+        offset:0,
+        h:0,
+
         init(){
+            this.open = false;
             this.lastY = window.scrollY;
 
-            window.addEventListener('scroll', () => {
-                const y = window.scrollY;
-                const goingDown = y > this.lastY;
-                const goingUp   = y < this.lastY;
+            // header height
+            this.h = this.$el.offsetHeight;
 
-                // Always show when near top
-                if (y <= 10) {
-                    this.hidden = false;
-                    this.lastY = y;
-                    return;
-                }
+            const onScroll = () => {
+            const y = window.scrollY;
+            const delta = y - this.lastY;
 
-                // Hide only when scrolling down
-                if (goingDown && y > 80) this.hidden = true;
-
-                // Show when scrolling up (small threshold avoids flicker)
-                if (goingUp && (this.lastY - y) > 5) this.hidden = false;
-
+            // when near top: fully show + no bg
+            if (y <= 10) {
+                this.offset = 0;
+                this.scrolled = false;
                 this.lastY = y;
+                return;
+            }
+
+            // progressive hide/show
+            if (delta > 0) {
+                // scrolling down → hide gradually
+                this.offset = Math.min(this.h, this.offset + delta);
+            } else if (delta < 0) {
+                // scrolling up → show gradually
+                this.offset = Math.max(0, this.offset + delta);
+            }
+
+            // background only when header is visible and not at top
+            this.scrolled = (y > 10 && this.offset < this.h);
+
+            this.lastY = y;
+            };
+
+            window.addEventListener('scroll', onScroll, { passive:true });
+
+            // if resized, recalc header height
+            window.addEventListener('resize', () => {
+            this.h = this.$el.offsetHeight;
+            this.offset = Math.min(this.offset, this.h);
             }, { passive:true });
         }
     }"
     x-init="init()"
-    :class="hidden ? '-translate-y-full' : 'translate-y-0'"
-    class="fixed top-0 left-0 right-0 z-50 transition-transform duration-300">
-    <div class="">
-        <div class="mt-4">
+    :style="`transform: translateY(-${offset}px)`"
+    class="fixed top-0 left-0 right-0 z-50 will-change-transform">
+    <div
+        :class="scrolled ? 'header-glass' : 'header-clear'">
+        <div class="pt-4">
 
             <div class="flex items-center justify-between gap-3 px-4 py-3 sm:px-6">
 
                 <div class="header-row">
                     {{-- Logo + Brand Text --}}
                     <a href="/" class="brand">
-                        <img src="images/logo-croped.png" alt="Digitron Computers UAE" class="brand-logo">
+                        <img src="{{ asset('images/logo-croped.png') }}" alt="Digitron Computers UAE" class="brand-logo">
 
                         <span class="brand-text">
                             <span class="brand-title">
-                                <span class="bt-main">Digitron</span>
-                                <span class="bt-sub">Computers UAE</span>
+                                <span class="bt-main">DIGITRON</span>
+                                <span class="bt-sub">COMPUTERS UAE</span>
                             </span>
                         </span>
                     </a>
 
                     {{-- Desktop Right Icons (icons only, hover label) --}}
                     <div class="top-actions actions-desktop">
+                        {{-- HOME ICON (hide on home page) --}}
+                        @if(!request()->routeIs('home'))
+                        <a href="{{ route('home') }}" class="icon-btn" aria-label="Home">
+                            <i class="bi bi-house-door"></i>
+                            <span class="icon-label">Home</span>
+                        </a>
+                        @endif
+
                         <a href="/shop" class="icon-btn" aria-label="Shop">
                             <i class="bi bi-basket3"></i>
                             <span class="icon-label">Shop</span>
@@ -62,10 +92,104 @@
                             <span class="icon-label">Cart</span>
                         </a>
 
-                        <a href="/account" class="icon-btn" aria-label="Account">
-                            <i class="bi bi-person-circle"></i>
-                            <span class="icon-label">Account</span>
-                        </a>
+                        {{-- DESKTOP: ACCOUNT / ADMIN LOGIN DROPDOWN --}}
+                        <div class="relative" x-data="{ accOpen:false }">
+
+                            {{-- Button (icon like before) --}}
+                            <button
+                                type="button"
+                                class="icon-btn"
+                                aria-label="Account"
+                                @click="accOpen = !accOpen"
+                                @keydown.escape.window="accOpen=false">
+                                <i class="bi bi-person-circle"></i>
+                                <span class="icon-label">Account</span>
+                            </button>
+
+                            {{-- Dropdown Panel --}}
+                            <div
+                                x-show="accOpen"
+                                x-transition.origin.top.right
+                                @click.outside="accOpen=false"
+                                class="absolute right-0 mt-3 w-[360px] z-50 rounded-2xl border border-white/10 bg-[#0b1220]/95 backdrop-blur-xl shadow-2xl overflow-hidden">
+
+                                {{-- If Admin already logged in --}}
+                                @auth
+                                @if(auth()->user()->is_admin)
+                                <div class="p-5">
+                                    <div class="text-white font-bold text-lg mb-1">Admin</div>
+                                    <div class="text-gray-400 text-sm mb-4">
+                                        Logged in as <span class="text-white">{{ auth()->user()->email }}</span>
+                                    </div>
+
+                                    <a href="{{ route('admin.dashboard') }}"
+                                        class="block w-full text-center py-3 rounded-xl bg-brand-accent text-black font-bold hover:bg-white transition">
+                                        Open Dashboard
+                                    </a>
+
+                                    <form method="POST" action="{{ route('admin.logout') }}" class="mt-3">
+                                        @csrf
+                                        <button type="submit"
+                                            class="w-full py-3 rounded-xl border border-white/10 text-white hover:bg-white/10 transition">
+                                            Logout
+                                        </button>
+                                    </form>
+                                </div>
+                                @else
+                                <div class="p-5 text-gray-300">
+                                    <div class="font-bold text-white mb-1">Account</div>
+                                    <div class="text-sm text-gray-400">You are logged in (not admin).</div>
+                                </div>
+                                @endif
+                                @endauth
+
+                                {{-- Not logged in: show login form --}}
+                                @guest
+                                <div class="p-5">
+                                    <div class="text-white font-bold text-lg mb-1">Admin Login</div>
+                                    <div class="text-gray-400 text-sm mb-4">Enter credentials to open dashboard.</div>
+
+                                    {{-- Error message (from your middleware redirect with "error") --}}
+                                    @if(session('error'))
+                                    <div class="mb-3 rounded-xl border border-red-500/30 bg-red-500/10 text-red-200 text-sm px-4 py-3">
+                                        {{ session('error') }}
+                                    </div>
+                                    @endif
+
+                                    {{-- Validation errors --}}
+                                    @if($errors->any())
+                                    <div class="mb-3 rounded-xl border border-red-500/30 bg-red-500/10 text-red-200 text-sm px-4 py-3">
+                                        {{ $errors->first() }}
+                                    </div>
+                                    @endif
+
+                                    <form method="POST" action="{{ route('admin.login.post') }}" class="space-y-3">
+                                        @csrf
+
+                                        <div>
+                                            <label class="text-xs text-gray-400">Email</label>
+                                            <input name="email" type="email" required
+                                                class="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-brand-accent"
+                                                placeholder="admin@digitron.ae">
+                                        </div>
+
+                                        <div>
+                                            <label class="text-xs text-gray-400">Password</label>
+                                            <input name="password" type="password" required
+                                                class="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-brand-accent"
+                                                placeholder="••••••••">
+                                        </div>
+
+                                        <button type="submit"
+                                            class="w-full py-3 rounded-xl bg-brand-accent text-black font-bold hover:bg-white transition">
+                                            Login
+                                        </button>
+                                    </form>
+                                </div>
+                                @endguest
+
+                            </div>
+                        </div>
                     </div>
 
                     <!-- DESKTOP MENU ICON ONLY -->
@@ -188,7 +312,7 @@
                         </div>
                     </div>
 
-                    
+
 
                     {{-- Mobile Menu Button ONLY --}}
                     <button
@@ -205,8 +329,8 @@
             </div>
 
             {{-- Mobile Dropdown --}}
-            <div x-show="open" x-transition class="mobile-dropdown">
-                <div class="mobile-menu">
+            <div x-show="open" x-transition class="mobile-dropdown" @click.self="open=false">
+                <div class="mobile-menu" @click.capture="if($event.target.closest('a')) open=false">
 
                     <!-- PC Components (accordion) -->
                     <details class="m-acc">
@@ -258,7 +382,9 @@
                         <span class="mobile-badge cart-count">2</span>
                     </a>
 
-                    <a href="/account" class="mobile-link"><i class="bi bi-person-circle"></i><span>Account</span></a>
+                    <a href="{{ route('admin.login') }}" class="mobile-link">
+                        <i class="bi bi-person-circle"></i><span>Account</span>
+                    </a>
                 </div>
             </div>
 
