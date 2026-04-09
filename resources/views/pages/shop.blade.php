@@ -7,10 +7,10 @@
 <section class="relative h-[60vh] min-h-[500px] overflow-hidden flex items-center justify-center">
     <!-- Video Background -->
     <div class="absolute inset-0 w-full h-full z-0">
-        <video autoplay muted loop playsinline preload="auto" class="object-cover w-full h-full opacity-40">
+        <video autoplay muted loop playsinline preload="auto" class="object-cover w-full h-full opacity-60 scale-110">
             <source src="{{ asset('videos/shop-hero.mp4') }}?v={{ time() }}" type="video/mp4">
         </video>
-        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-[#070A12]/60 to-[#070A12]"></div>
+        <div class="absolute inset-0 bg-gradient-to-b from-[#070A12]/15 via-[#070A12]/35 to-[#070A12]/55"></div>
     </div>
 
     <!-- Animated Grid Overlay -->
@@ -35,7 +35,7 @@
         <!-- Quick Stats -->
         <div class="mt-10 flex justify-center gap-8 md:gap-16">
             <div class="text-center">
-                <div class="text-3xl font-display font-bold text-white counter" data-target="5000">0</div>
+                <div class="text-3xl font-display font-bold text-white">{{ number_format(\App\Models\Product::where('is_active',1)->count()) }}</div>
                 <div class="text-xs text-gray-500 uppercase tracking-widest mt-1">Products</div>
             </div>
             <div class="text-center">
@@ -78,20 +78,40 @@
                 </div>
 
                 {{-- Center: Category Pills --}}
-                <div class="hidden md:flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 no-scrollbar">
-                    <a href="{{ route('shop') }}"
-                        class="px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap
-                                {{ $activeCategory === 'all' ? 'bg-brand-accent text-black' : 'bg-white/5 text-white hover:bg-white/10 border border-white/10' }}">
-                        All
-                    </a>
+                <div class="hidden md:flex items-center gap-3 min-w-0 flex-1">
+                    <button
+                        type="button"
+                        id="catPillsPrev"
+                        class="shrink-0 w-10 h-10 rounded-xl border border-white/10 bg-white/5 text-white hover:bg-white/10 transition-colors flex items-center justify-center">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
 
-                    @foreach($categories as $cat)
-                    <a href="{{ route('shop', ['category' => $cat->slug]) }}"
-                        class="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap border border-white/10
-                                    {{ $activeCategory === $cat->slug ? 'bg-brand-accent text-black font-bold' : 'bg-white/5 text-white hover:bg-white/10' }}">
-                        {{ $cat->name }}
-                    </a>
-                    @endforeach
+                    <div class="relative min-w-0 flex-1">
+                        <div
+                            id="categoryPillsScroller"
+                            class="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 no-scrollbar scroll-smooth">
+                            <a href="{{ route('shop', array_merge(request()->except('page','category'), ['category' => 'all'])) }}"
+                                class="px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap
+                {{ $activeCategory === 'all' ? 'bg-brand-accent text-black' : 'bg-white/5 text-white hover:bg-white/10 border border-white/10' }}">
+                                All
+                            </a>
+
+                            @foreach($categories as $cat)
+                            <a href="{{ route('shop', array_merge(request()->except('page'), ['category' => $cat->slug])) }}"
+                                class="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap border border-white/10
+                {{ $activeCategory === $cat->slug ? 'bg-brand-accent text-black font-bold' : 'bg-white/5 text-white hover:bg-white/10' }}">
+                                {{ $cat->name }}
+                            </a>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        id="catPillsNext"
+                        class="shrink-0 w-10 h-10 rounded-xl border border-white/10 bg-white/5 text-white hover:bg-white/10 transition-colors flex items-center justify-center">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
                 </div>
 
                 {{-- Right: View & Sort --}}
@@ -106,12 +126,48 @@
                         </button>
                     </div>
 
+                    @php
+                    $sortVal = request('sort','featured');
+                    $sortLabelMap = [
+                    'featured' => 'Sort: Featured',
+                    'price_asc' => 'Price: Low to High',
+                    'price_desc' => 'Price: High to Low',
+                    'newest' => 'Newest First',
+                    'rating' => 'Best Rated',
+                    ];
+                    $sortLabel = $sortLabelMap[$sortVal] ?? 'Sort: Featured';
+                    @endphp
+
                     <div class="relative" x-data="{
-                        open:false,
-                        label:'Sort: Featured',
-                        items:['Sort: Featured','Price: Low to High','Price: High to Low','Newest First','Best Rated'],
-                        choose(v){ this.label=v; this.open=false; }
+                            open:false,
+                            label:@js($sortLabel),
+                            items:[
+                                {label:'Sort: Featured', val:'featured'},
+                                {label:'Price: Low to High', val:'price_asc'},
+                                {label:'Price: High to Low', val:'price_desc'},
+                                {label:'Newest First', val:'newest'},
+                                {label:'Best Rated', val:'rating'},
+                            ],
+                            choose(it){
+                                this.label = it.label;
+                                this.open = false;
+
+                                // update hidden input (inside sidebar form)
+                                const sortInput = document.getElementById('sortInput');
+                                if (sortInput) sortInput.value = it.val;
+
+                                // if sidebar form exists, submit it
+                                const form = document.getElementById('shopFiltersForm');
+                                if (form) form.submit();
+                                else {
+                                    // fallback: just update URL (should rarely happen)
+                                    const url = new URL(window.location.href);
+                                    url.searchParams.set('sort', it.val);
+                                    window.location.href = url.toString();
+                                }
+                            }
                         }">
+                        {{-- Sort Button --}}
                         <button type="button"
                             @click="open=!open"
                             @keydown.escape.window="open=false"
@@ -121,12 +177,14 @@
                             <i class="bi bi-chevron-down text-gray-300"></i>
                         </button>
 
+                        {{-- Dropdown Panel --}}
                         <div x-show="open" x-transition.origin.top.right @click.outside="open=false"
                             class="absolute right-0 mt-2 w-full rounded-xl border border-white/10 bg-[#0b1220]/95 backdrop-blur-xl shadow-2xl z-50 overflow-hidden">
-                            <template x-for="it in items" :key="it">
+
+                            <template x-for="it in items" :key="it.val">
                                 <button type="button" @click="choose(it)"
                                     class="w-full text-left px-4 py-2.5 text-sm text-gray-200 hover:bg-white/10 hover:text-white transition-colors">
-                                    <span x-text="it"></span>
+                                    <span x-text="it.label"></span>
                                 </button>
                             </template>
                         </div>
@@ -137,236 +195,24 @@
     </div>
 
     <div class="grid gap-8 lg:grid-cols-12">
+
         {{-- Sidebar Filters --}}
-        <aside
-            class="lg:col-span-3 transition-all duration-500"
+        <aside class="lg:col-span-3 transition-all duration-500"
             :class="filtersOpen ? 'block' : 'hidden lg:block'">
-            <div class="space-y-4">
-                {{-- Active Filters --}}
-                <div class="glass-panel rounded-2xl border border-white/10 p-5">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="text-sm font-bold text-white flex items-center gap-2">
-                            <i class="bi bi-sliders"></i> Filters
-                        </div>
-                        <a href="{{ route('shop') }}" class="text-xs text-brand-accent hover:text-white transition-colors">Clear All</a>
-                    </div>
-
-                    {{-- Active Tags --}}
-                    <div class="flex flex-wrap gap-2">
-                        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-brand-accent/20 text-brand-accent text-xs border border-brand-accent/30">
-                            New <i class="bi bi-x-circle-fill cursor-pointer hover:text-white"></i>
-                        </span>
-                        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-brand-accent/20 text-brand-accent text-xs border border-brand-accent/30">
-                            NVIDIA <i class="bi bi-x-circle-fill cursor-pointer hover:text-white"></i>
-                        </span>
-                    </div>
-                </div>
-
-                {{-- Condition Filter --}}
-                <div class="glass-panel rounded-2xl border border-white/10 p-5 filter-section">
-                    <button class="flex items-center justify-between w-full text-sm font-bold text-white mb-4 group">
-                        <span>Condition</span>
-                        <i class="bi bi-chevron-down transition-transform group-hover:text-brand-accent"></i>
-                    </button>
-                    <div class="space-y-3">
-                        @foreach(['New' => '128', 'Used' => '45', 'Refurbished' => '23'] as $condition => $count)
-                        <label class="flex items-center justify-between group cursor-pointer">
-                            <div class="flex items-center gap-3">
-                                <div class="relative">
-                                    <input type="checkbox" class="peer sr-only" {{ $condition === 'New' ? 'checked' : '' }}>
-                                    <div class="w-5 h-5 rounded border-2 border-white/20 peer-checked:bg-brand-accent peer-checked:border-brand-accent transition-all"></div>
-                                    <i class="bi bi-check-lg absolute top-0.5 left-0.5 text-black text-xs opacity-0 peer-checked:opacity-100"></i>
-                                </div>
-                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">{{ $condition }}</span>
-                            </div>
-                            <span class="text-xs text-gray-500">{{ $count }}</span>
-                        </label>
-                        @endforeach
-                    </div>
-                </div>
-
-                {{-- Brand Filter --}}
-                <div class="glass-panel rounded-2xl border border-white/10 p-5 filter-section">
-                    <button class="flex items-center justify-between w-full text-sm font-bold text-white mb-4 group">
-                        <span>Brand</span>
-                        <i class="bi bi-chevron-down transition-transform group-hover:text-brand-accent"></i>
-                    </button>
-                    <div class="space-y-3 max-h-48 overflow-y-auto custom-scrollbar">
-                        @foreach(['NVIDIA' => '45', 'AMD' => '38', 'Intel' => '32', 'ASUS' => '28', 'MSI' => '24', 'Gigabyte' => '20', 'Corsair' => '18', 'Samsung' => '15'] as $brand => $count)
-                        <label class="flex items-center justify-between group cursor-pointer">
-                            <div class="flex items-center gap-3">
-                                <div class="relative">
-                                    <input type="checkbox" class="peer sr-only">
-                                    <div class="w-5 h-5 rounded border-2 border-white/20 peer-checked:bg-brand-accent peer-checked:border-brand-accent transition-all"></div>
-                                    <i class="bi bi-check-lg absolute top-0.5 left-0.5 text-black text-xs opacity-0 peer-checked:opacity-100"></i>
-                                </div>
-                                <span class="text-sm text-gray-300 group-hover:text-white transition-colors">{{ $brand }}</span>
-                            </div>
-                            <span class="text-xs text-gray-500">{{ $count }}</span>
-                        </label>
-                        @endforeach
-                    </div>
-                </div>
-
-                {{-- Price Range --}}
-                <div class="glass-panel rounded-2xl border border-white/10 p-5 filter-section">
-                    <button class="flex items-center justify-between w-full text-sm font-bold text-white mb-4 group">
-                        <span>Price Range (AED)</span>
-                        <i class="bi bi-chevron-down transition-transform group-hover:text-brand-accent"></i>
-                    </button>
-                    <div class="space-y-4">
-                        <div class="relative h-2 bg-white/10 rounded-full">
-                            <div class="absolute h-full bg-gradient-to-r from-brand-accent to-brand-secondary rounded-full" style="left: 20%; right: 30%;"></div>
-                            <div class="absolute w-4 h-4 bg-white rounded-full shadow-lg cursor-pointer hover:scale-125 transition-transform" style="left: 20%; top: -4px;"></div>
-                            <div class="absolute w-4 h-4 bg-white rounded-full shadow-lg cursor-pointer hover:scale-125 transition-transform" style="right: 30%; top: -4px;"></div>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <div class="relative flex-1">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">AED</span>
-                                <input type="number" value="200" class="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-3 py-2.5 text-sm outline-none focus:border-brand-accent transition-colors">
-                            </div>
-                            <span class="text-gray-500">-</span>
-                            <div class="relative flex-1">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">AED</span>
-                                <input type="number" value="5000" class="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-3 py-2.5 text-sm outline-none focus:border-brand-accent transition-colors">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Rating Filter --}}
-                <div class="glass-panel rounded-2xl border border-white/10 p-5 filter-section">
-                    <button class="flex items-center justify-between w-full text-sm font-bold text-white mb-4 group">
-                        <span>Rating</span>
-                        <i class="bi bi-chevron-down transition-transform group-hover:text-brand-accent"></i>
-                    </button>
-                    <div class="space-y-2">
-                        @foreach([5, 4, 3] as $stars)
-                        <label class="flex items-center gap-3 cursor-pointer group">
-                            <input type="radio" name="rating" class="sr-only peer" {{ $stars === 4 ? 'checked' : '' }}>
-                            <div class="flex-1 flex items-center gap-1">
-                                @for($i = 0; $i < 5; $i++)
-                                    <i class="bi bi-star-fill text-xs {{ $i < $stars ? 'text-yellow-400' : 'text-gray-600' }}"></i>
-                                    @endfor
-                                    <span class="text-xs text-gray-400 ml-2">& Up</span>
-                            </div>
-                            <div class="w-4 h-4 rounded-full border-2 border-white/20 peer-checked:border-brand-accent peer-checked:bg-brand-accent transition-all relative">
-                                <div class="absolute inset-1 rounded-full bg-black opacity-0 peer-checked:opacity-100"></div>
-                            </div>
-                        </label>
-                        @endforeach
-                    </div>
-                </div>
+            <div id="shopFiltersWrap">
+                @include('pages.shop._filters')
             </div>
         </aside>
 
-        {{-- Product Grid --}}
+        {{-- Products --}}
         <div class="lg:col-span-9">
-            {{-- Grid View --}}
-            <div
-                class="grid gap-5 transition-all duration-500"
-                :class="viewMode === 'grid' ? 'grid-cols-2 sm:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'">
-                @foreach($products as $p)
-                @php
-                // image (from accessor)
-                $img = $p->primary_image_url;
-
-                // badge (from DB: badge_text)
-                $badge = strtolower(str_replace(' ', '', trim($p->badge_text ?? ''))); // hot|sale|bestseller|used
-
-                // tag (from DB: condition)
-                $cond = strtolower(trim($p->condition ?? 'new')); // new|used|refurbished
-                $tagMap = [
-                'new' => 'New',
-                'used' => 'Used',
-                'refurbished' => 'Refurbished',
-                ];
-                $tag = $tagMap[$cond] ?? ucfirst($cond);
-                @endphp
-
-                <a href="{{ route('product.show', ['slug' => $p->slug]) }}"
-                    class="product-card group relative rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden
-                            hover:border-brand-accent/50 transition-all duration-500 hover:shadow-2xl hover:shadow-brand-accent/10
-                            hover:-translate-y-2">
-
-                    <div class="relative aspect-square min-h-[220px] overflow-hidden rounded-t-2xl bg-gradient-to-br from-white/5 to-transparent flex items-center justify-center">
-
-                        @if($badge)
-                        <div class="absolute top-3 left-3 z-10">
-                            <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider
-                                {{ $badge === 'hot' ? 'bg-red-500/80 text-white' : '' }}
-                                {{ $badge === 'sale' ? 'bg-brand-accent text-black' : '' }}
-                                {{ $badge === 'bestseller' ? 'bg-purple-500/80 text-white' : '' }}
-                                {{ $badge === 'used' ? 'bg-gray-500/80 text-white' : '' }}
-                                backdrop-blur-sm border border-white/10">
-                                {{ $badge }}
-                            </span>
-                        </div>
-                        @endif
-
-                        <img src="{{ $img }}"
-                            alt="{{ $p->name }}"
-                            class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
-
-                        <div class="absolute inset-x-4 bottom-4 z-30 opacity-0 translate-y-8
-                    group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 ease-out">
-                            <button type="button" class="w-full py-3 rounded-xl bg-brand-accent text-black font-bold text-sm">
-                                <i class="bi bi-cart-plus"></i> Quick Add
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-medium text-brand-accent uppercase tracking-wider">{{ $tag }}</span>
-                            <div class="flex items-center gap-1">
-                                <i class="bi bi-star-fill text-yellow-400 text-xs"></i>
-                                <span class="text-xs text-gray-400">
-                                    {{ number_format($p->rating ?? 4.8, 1) }}
-                                    @if($p->rating_count) ({{ $p->rating_count }}) @endif
-                                </span>
-                            </div>
-                        </div>
-
-                        <h3 class="text-sm font-bold text-white group-hover:text-brand-accent transition-colors line-clamp-2 mb-3">
-                            {{ $p->name }}
-                        </h3>
-
-                        <div class="flex items-center justify-between">
-                            <span class="text-lg font-bold text-white">AED {{ number_format($p->price, 0) }}</span>
-
-                            @if($p->compare_at_price && $p->compare_at_price > $p->price)
-                            <span class="text-xs text-gray-500 line-through ml-2">
-                                AED {{ number_format($p->compare_at_price, 0) }}
-                            </span>
-                            @endif
-                        </div>
-                    </div>
-                </a>
-                @endforeach
-            </div>
-
-            {{-- Load More --}}
-            <div class="mt-12 text-center">
-                @if($products->hasMorePages())
-                <a href="{{ $products->nextPageUrl() }}"
-                    class="group relative inline-flex items-center justify-center px-8 py-4 rounded-full border border-white/20 text-white font-medium hover:border-brand-accent transition-all duration-300 overflow-hidden">
-                    <span class="relative z-10 flex items-center gap-2 text-white transition-colors">
-                        Load More Products <i class="bi bi-arrow-down animate-bounce"></i>
-                    </span>
-                    <div class="absolute inset-0 bg-brand-accent translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-                </a>
-                @else
-                <div class="text-gray-500 text-sm">No more products</div>
-                @endif
-            </div>
-
-            {{-- Pagination --}}
-            <div class="mt-10">
-                {{ $products->links() }}
+            <div id="shopResultsWrap">
+                @include('pages.shop._products')
             </div>
         </div>
+
     </div>
+
 </section>
 
 {{-- Recently Viewed Section --}}

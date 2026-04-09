@@ -2,12 +2,21 @@
 
 @section('page','product')
 
-@php
-$product = collect($products)->firstWhere('slug', $slug) ?? $products[0];
-$thumbs = array_values(array_filter($product['thumbs'] ?? [$product['image']]));
-@endphp
-
 @section('fullwidth')
+
+@php
+// images() relation already ordered: primary first
+$main = $product->images->first();
+
+$mainImg = $main
+? asset('storage/' . ltrim($main->image_path, '/'))
+: asset('images/placeholder.png');
+
+$thumbs = $product->images
+->map(fn($img) => asset('storage/' . ltrim($img->image_path, '/')))
+->values()
+->all();
+@endphp
 
 {{-- Product Hero with Parallax Gallery --}}
 <section class="relative min-h-screen pt-24 pb-12 overflow-hidden">
@@ -28,7 +37,9 @@ $thumbs = array_values(array_filter($product['thumbs'] ?? [$product['image']]));
             <i class="bi bi-chevron-right text-xs"></i>
             <a href="{{ route('shop') }}" class="hover:text-white transition-colors">Shop</a>
             <i class="bi bi-chevron-right text-xs"></i>
-            <a href="#" class="hover:text-white transition-colors">{{ $product['category'] }}</a>
+            <a href="#" class="hover:text-white transition-colors">
+                {{ $product->category?->name ?? 'Uncategorized' }}
+            </a>
             <i class="bi bi-chevron-right text-xs"></i>
             <span class="text-white">{{ $product['name'] }}</span>
         </nav>
@@ -39,10 +50,9 @@ $thumbs = array_values(array_filter($product['thumbs'] ?? [$product['image']]));
                 <!-- Main Image -->
                 <div class="relative aspect-square rounded-3xl border border-white/10 bg-white/[0.03] overflow-hidden group" id="main-gallery">
                     <div class="absolute inset-0 flex items-center justify-center">
-                        <img src="{{ $product['image'] }}"
-                            alt="{{ $product['name'] }}"
-                            class="w-full h-full object-contain p-8 transition-transform duration-500 group-hover:scale-105"
-                            id="main-image">
+                        <img src="{{ $mainImg }}" id="main-image"
+                            alt="{{ $product->name }}"
+                            class="w-full h-full object-contain p-8 transition-transform duration-500 group-hover:scale-105">
                     </div>
 
                     <!-- Zoom Hint -->
@@ -51,137 +61,278 @@ $thumbs = array_values(array_filter($product['thumbs'] ?? [$product['image']]));
                     </div>
 
                     <!-- Navigation Arrows -->
-                    <button class="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white hover:bg-brand-accent hover:text-black transition-all opacity-0 group-hover:opacity-100">
+                    <button
+                        type="button"
+                        id="galleryPrev"
+                        class="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white hover:bg-brand-accent hover:text-black transition-all opacity-0 group-hover:opacity-100">
                         <i class="bi bi-chevron-left"></i>
                     </button>
-                    <button class="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white hover:bg-brand-accent hover:text-black transition-all opacity-0 group-hover:opacity-100">
+
+                    <button
+                        type="button"
+                        id="galleryNext"
+                        class="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white hover:bg-brand-accent hover:text-black transition-all opacity-0 group-hover:opacity-100">
                         <i class="bi bi-chevron-right"></i>
                     </button>
 
                     <!-- 360 View Badge -->
-                    <div class="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-brand-accent text-black text-xs font-bold flex items-center gap-2">
+                    <!-- <div class="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-brand-accent text-black text-xs font-bold flex items-center gap-2">
                         <i class="bi bi-360"></i> 360° View
-                    </div>
+                    </div> -->
                 </div>
 
                 <!-- Thumbnails -->
                 <div class="grid grid-cols-5 gap-3">
-                    @foreach($thumbs as $index => $img)
-                    <button
-                        type="button"
+                    @forelse($thumbs as $index => $img)
+                    <button type="button"
                         class="gallery-thumb aspect-square rounded-xl border-2 {{ $index === 0 ? 'border-brand-accent' : 'border-white/10' }}
-                                overflow-hidden hover:border-brand-accent transition-all group"
+              overflow-hidden hover:border-brand-accent transition-all group"
                         data-gallery-thumb
                         data-img="{{ $img }}">
-                        <img src="{{ $img }}"
-                            class="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity"
-                            onerror="this.closest('button').style.display='none';">
+                        <img src="{{ $img }}" class="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity">
                     </button>
-                    @endforeach
+                    @empty
+                    {{-- optional: show 1 placeholder thumb --}}
+                    <div class="aspect-square rounded-xl border border-white/10 bg-white/5"></div>
+                    @endforelse
                 </div>
 
-                <!-- Video Preview -->
-                <div class="relative rounded-2xl overflow-hidden border border-white/10 group cursor-pointer">
-                    <video autoplay muted loop playsinline class="w-full h-48 object-cover opacity-60 group-hover:opacity-80 transition-opacity">
-                        <source src="https://assets.mixkit.co/videos/preview/mixkit-abstract-technology-network-connections-27612-large.mp4" type="video/mp4">
-                    </video>
-                    <div class="absolute inset-0 flex items-center justify-center">
-                        <div class="w-16 h-16 rounded-full bg-brand-accent/90 flex items-center justify-center text-black text-2xl group-hover:scale-110 transition-transform">
-                            <i class="bi bi-play-fill ml-1"></i>
+                {{-- Video Preview (under thumbs) --}}
+                @if($product->video_url)
+                @php $videoUrl = $product->video_url; @endphp
+
+                <div class="mt-4">
+                    <div class="relative rounded-2xl overflow-hidden border border-white/10 group cursor-pointer"
+                        data-open-video
+                        data-video-url="{{ $videoUrl }}">
+                        <video muted playsinline preload="metadata"
+                            class="w-full aspect-video object-contain bg-black opacity-70 group-hover:opacity-90 transition-opacity">
+                            <source src="{{ $videoUrl }}">
+                        </video>
+
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="w-16 h-16 rounded-full bg-brand-accent/90 flex items-center justify-center text-black text-2xl
+                    group-hover:scale-110 transition-transform">
+                                <i class="bi bi-play-fill ml-1"></i>
+                            </div>
+                        </div>
+
+                        <div class="absolute bottom-3 left-3 text-sm font-medium text-white/90">Product Video</div>
+                    </div>
+                </div>
+
+                {{-- Video Modal --}}
+                <div id="videoModal" class="hidden fixed inset-0 z-[9999] bg-black/90">
+                    <div class="min-h-dvh w-full flex items-center justify-center p-2 sm:p-5">
+                        <div
+                            class="relative w-full max-w-[94vw] sm:max-w-4xl rounded-2xl bg-[#0b0b12] border border-white/10 shadow-2xl overflow-hidden"
+                            data-video-backdrop>
+
+                            {{-- header inside modal --}}
+                            <div class="flex items-center justify-between px-4 py-3 border-b border-white/10">
+                                <div class="text-white font-semibold">Product Video</div>
+
+                                <button
+                                    type="button"
+                                    id="closeVideoModal"
+                                    class="shrink-0 w-10 h-10 rounded-full bg-black/70 border border-white/15 text-white text-base flex items-center justify-center hover:bg-white hover:text-black transition"
+                                    aria-label="Close video">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+
+                            <div class="flex items-center justify-center p-2 sm:p-4 bg-black">
+                                <video
+                                    id="productVideoPlayer"
+                                    controls
+                                    playsinline
+                                    preload="metadata"
+                                    class="block w-full h-auto max-h-[70dvh] sm:max-h-[78vh] rounded-xl bg-black object-contain">
+                                </video>
+                            </div>
                         </div>
                     </div>
-                    <div class="absolute bottom-3 left-3 text-sm font-medium">Product Video</div>
                 </div>
+                @endif
             </div>
 
             {{-- Right: Product Info --}}
             <div class="lg:sticky lg:top-24 lg:h-fit space-y-6">
+                @php
+                $inStock = (int)($product->stock_qty ?? 0) > 0;
+                $rating = is_numeric($product->rating) ? (float)$product->rating : 0;
+                $ratingCount = is_numeric($product->rating_count) ? (int)$product->rating_count : 0;
+
+                // clamp rating 0..5
+                $rating = max(0, min(5, $rating));
+
+                // how many full stars to show (rounded)
+                $stars = (int) round($rating);
+                @endphp
                 <!-- Header -->
                 <div>
                     <div class="flex items-center gap-3 mb-3">
-                        <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold border border-emerald-500/30 flex items-center gap-1.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                            In Stock
+                        <span class="px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5
+                            {{ $inStock ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30' }}">
+                            <span class="w-1.5 h-1.5 rounded-full {{ $inStock ? 'bg-emerald-400 animate-pulse' : 'bg-red-400' }}"></span>
+                            {{ $inStock ? 'In Stock' : 'Out of Stock' }}
                         </span>
-                        <span class="px-3 py-1 rounded-full bg-brand-accent/20 text-brand-accent text-xs font-bold border border-brand-accent/30">New Arrival</span>
+
+                        @if(!empty($product->badge_text))
+                        <span class="px-3 py-1 rounded-full bg-brand-accent/20 text-brand-accent text-xs font-bold border border-brand-accent/30">
+                            {{ $product->badge_text }}
+                        </span>
+                        @endif
                     </div>
 
                     <h1 class="text-3xl sm:text-4xl lg:text-5xl font-display font-bold leading-tight mb-2">
-                        NVIDIA GeForce<br>
                         <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-accent to-brand-secondary">
-                            {{ $product['name'] }}
+                            {{ $product->name }}
                         </span>
                     </h1>
 
+                    @if(!empty($product->short_description))
+                    <p class="text-gray-300 mt-3 leading-relaxed">
+                        {{ $product->short_description }}
+                    </p>
+                    @endif
+
                     <div class="flex items-center gap-4 text-sm">
                         <div class="flex items-center gap-1">
-                            @for($i = 0; $i < 5; $i++)
-                                <i class="bi bi-star-fill {{ $i < 4 ? 'text-yellow-400' : 'text-gray-600' }}"></i>
+                            @for($i=1; $i<=5; $i++)
+                                <i class="bi bi-star-fill {{ $i <= round($rating) ? 'text-yellow-400' : 'text-gray-600' }}"></i>
                                 @endfor
-                                <span class="text-gray-400 ml-2">4.8 (128 reviews)</span>
+                                <span class="text-gray-400 ml-2">
+                                    {{ number_format($rating, 1) }} ({{ $ratingCount }} {{ Str::plural('review', $ratingCount) }})
+                                </span>
                         </div>
+
                         <span class="text-gray-600">|</span>
-                        <span class="text-gray-400">SKU: <span class="text-white">RTX4070S-ASUS</span></span>
+                        <span class="text-gray-400">SKU: <span class="text-white">{{ $product->sku ?? '—' }}</span></span>
                     </div>
                 </div>
 
                 <!-- Price -->
                 <div class="glass-panel rounded-2xl p-6 border border-white/10">
+                    @php
+                    $price = is_numeric($product->price) ? (float)$product->price : null;
+                    $compare = is_numeric($product->compare_at_price) ? (float)$product->compare_at_price : null;
+
+                    // prefer stored discount_percent if you have it, else compute from compare_at_price
+                    $discount = is_numeric($product->discount_percent) ? (float)$product->discount_percent : null;
+                    if (!$discount && $compare && $price && $compare > $price) {
+                    $discount = round((($compare - $price) / $compare) * 100, 0);
+                    }
+                    @endphp
                     <div class="flex items-end gap-4 mb-4">
-                        <span class="text-4xl sm:text-5xl font-display font-bold text-white">AED {{ $product['price'] }}</span>
-                        <span class="text-xl text-gray-500 line-through mb-2">AED 3,199</span>
-                        <span class="px-3 py-1 rounded-lg bg-red-500/20 text-red-400 text-sm font-bold mb-2">-12%</span>
+                        <span class="text-4xl sm:text-5xl font-display font-bold text-white">
+                            AED {{ $price ? number_format($price, 2) : '—' }}
+                        </span>
+
+                        @if($compare && $compare > ($price ?? 0))
+                        <span class="text-xl text-gray-500 line-through mb-2">
+                            AED {{ number_format($compare, 2) }}
+                        </span>
+                        @endif
+
+                        @if($discount)
+                        <span class="px-3 py-1 rounded-lg bg-red-500/20 text-red-400 text-sm font-bold mb-2">
+                            -{{ rtrim(rtrim(number_format($discount, 2), '0'), '.') }}%
+                        </span>
+                        @endif
                     </div>
 
+                    @if(!empty($product->delivery_text))
                     <div class="flex items-center gap-2 text-sm text-gray-400 mb-6">
                         <i class="bi bi-truck text-brand-accent"></i>
-                        Free delivery to Dubai within 24 hours
+                        {{ $product->delivery_text }}
                     </div>
+                    @endif
 
                     <!-- Actions -->
                     <div class="space-y-3">
-                        <div class="flex items-center gap-4">
-                            <div class="flex items-center border border-white/10 rounded-xl overflow-hidden">
-                                <button type="button" class="px-4 py-3 hover:bg-white/5 transition-colors" data-qty-minus>
+                        <div class="flex flex-col gap-3 sm:gap-4">
+
+                            <!-- Qty -->
+                            <div class="flex items-center border border-white/10 rounded-2xl overflow-hidden w-full sm:w-fit">
+                                <button type="button" class="flex-1 sm:flex-none px-4 py-3 hover:bg-white/5 transition-colors" data-qty-minus>
                                     <i class="bi bi-dash"></i>
                                 </button>
-                                <input type="number" value="1" id="qty" class="w-16 text-center bg-transparent border-x border-white/10 py-3 text-sm font-bold" min="1" max="10">
-                                <button type="button" class="px-4 py-3 hover:bg-white/5 transition-colors" data-qty-minus>
+
+                                <input
+                                    type="number"
+                                    value="1"
+                                    id="qty"
+                                    class="w-full sm:w-16 text-center bg-transparent border-x border-white/10 py-3 text-sm font-bold"
+                                    min="1"
+                                    max="10">
+
+                                <button type="button" class="flex-1 sm:flex-none px-4 py-3 hover:bg-white/5 transition-colors" data-qty-plus>
                                     <i class="bi bi-plus"></i>
                                 </button>
                             </div>
 
-                            <button class="flex-1 py-3.5 rounded-xl bg-brand-accent text-black font-bold hover:bg-white transition-all flex items-center justify-center gap-2 group">
-                                <i class="bi bi-cart-plus text-lg group-hover:scale-110 transition-transform"></i>
-                                Add to Cart
-                            </button>
+                            <!-- Cart + Wishlist -->
+                            <div class="grid grid-cols-[1fr_56px] sm:flex sm:items-center gap-3 sm:gap-4 w-full">
+                                <button
+                                    type="button"
+                                    class="w-full py-3.5 px-4 rounded-2xl bg-brand-accent text-black font-bold hover:bg-white transition-all flex items-center justify-center gap-2 group js-cart-add text-sm sm:text-base"
+                                    data-url="{{ route('cart.add', ['product' => $product->id]) }}"
+                                    data-qty="#qty">
+                                    <i class="bi bi-cart-plus text-base sm:text-lg group-hover:scale-110 transition-transform"></i>
+                                    <span>Add to Cart</span>
+                                </button>
 
-                            <button class="w-12 h-12 rounded-xl border border-white/10 flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-500/50 hover:bg-red-500/10 transition-all">
-                                <i class="bi bi-heart text-xl"></i>
-                            </button>
+                                @php
+                                $inWishlist = $inWishlist ?? false;
+                                @endphp
+
+                                <button
+                                    type="button"
+                                    class="h-14 w-14 rounded-2xl border flex items-center justify-center transition-all js-wish-toggle
+                                            {{ $inWishlist ? 'border-brand-accent/60 bg-brand-accent/10 text-brand-accent' : 'border-white/10 text-gray-400 hover:text-brand-accent hover:border-brand-accent/50 hover:bg-brand-accent/10' }}"
+                                    data-url="{{ route('wishlist.toggle', $product->id) }}"
+                                    data-in="{{ $inWishlist ? 1 : 0 }}"
+                                    aria-label="Add to wishlist">
+                                    <i class="bi {{ $inWishlist ? 'bi-heart-fill' : 'bi-heart' }} text-xl"></i>
+                                </button>
+                            </div>
                         </div>
 
-                        <button class="w-full py-3.5 rounded-xl border border-brand-accent text-brand-accent font-bold hover:bg-brand-accent hover:text-black transition-all flex items-center justify-center gap-2">
-                            Buy Now - AED 2,799
-                        </button>
+                        @php $isOutOfStock = (int) $product->stock_qty <= 0; @endphp
+
+                            <button
+                            type="button"
+                            class="w-full py-3.5 rounded-2xl border border-brand-accent text-brand-accent font-bold transition-all flex items-center justify-center gap-2 js-buy-now text-sm sm:text-base {{ $isOutOfStock ? 'opacity-50 cursor-not-allowed' : 'hover:bg-brand-accent hover:text-black' }}"
+                            data-url="{{ route('cart.add', ['product' => $product->id]) }}"
+                            data-qty="#qty"
+                            data-redirect="{{ route('cart') }}"
+                            {{ $isOutOfStock ? 'disabled' : '' }}>
+                            {{ $isOutOfStock ? 'Out of Stock' : 'Buy Now - AED ' . ($price ? number_format($price, 2) : '—') }}
+                            </button>
                     </div>
                 </div>
 
                 <!-- Key Specs -->
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    @foreach([
-                    ['icon' => 'gpu-card', 'label' => 'Memory', 'value' => '12GB GDDR6X'],
-                    ['icon' => 'lightning-charge', 'label' => 'Boost Clock', 'value' => '2.48 GHz'],
-                    ['icon' => 'display', 'label' => 'Resolution', 'value' => '4K @ 240Hz'],
-                    ['icon' => 'fan', 'label' => 'Cooling', 'value' => 'Triple Fan'],
-                    ['icon' => 'pci-e', 'label' => 'Interface', 'value' => 'PCIe 4.0'],
-                    ['icon' => 'power', 'label' => 'Power', 'value' => '220W TDP'],
-                    ] as $spec)
+                    @php
+                    $specs = [
+                    ['icon' => 'tag-fill', 'label' => 'Brand', 'value' => $product->brand],
+                    ['icon' => 'bookmark-fill', 'label' => 'Condition', 'value' => $product->condition ? ucfirst($product->condition) : null],
+                    ['icon' => 'grid-fill', 'label' => 'Category', 'value' => $product->category?->name],
+                    ['icon' => 'box-seam', 'label' => 'Stock', 'value' => $product->stock_qty ?? 0],
+                    ['icon' => 'percent', 'label' => 'Discount', 'value' => isset($discount) && $discount ? $discount.'%' : null],
+                    ];
+                    @endphp
+
+                    @foreach($specs as $s)
+                    @if(!is_null($s['value']) && $s['value'] !== '')
                     <div class="rounded-xl border border-white/5 bg-white/[0.02] p-4 hover:border-white/20 transition-colors group">
-                        <i class="bi bi-{{ $spec['icon'] }} text-brand-accent text-xl mb-2 group-hover:scale-110 transition-transform inline-block"></i>
-                        <div class="text-xs text-gray-500 mb-1">{{ $spec['label'] }}</div>
-                        <div class="text-sm font-bold text-white">{{ $spec['value'] }}</div>
+                        <i class="bi bi-{{ $s['icon'] }} text-brand-accent text-xl mb-2 inline-block"></i>
+                        <div class="text-xs text-gray-500 mb-1">{{ $s['label'] }}</div>
+                        <div class="text-sm font-bold text-white">{{ $s['value'] }}</div>
                     </div>
+                    @endif
                     @endforeach
                 </div>
 
@@ -219,7 +370,7 @@ $thumbs = array_values(array_filter($product['thumbs'] ?? [$product['image']]));
                 Description
             </button>
             <button @click="activeTab = 'reviews'" :class="activeTab === 'reviews' ? 'text-white border-b-2 border-brand-accent' : 'text-gray-400 hover:text-white'" class="pb-4 text-sm font-bold uppercase tracking-wider transition-colors whitespace-nowrap">
-                Reviews (128)
+                Reviews {{ $ratingCount ? "({$ratingCount})" : '' }}
             </button>
             <button @click="activeTab = 'compatibility'" :class="activeTab === 'compatibility' ? 'text-white border-b-2 border-brand-accent' : 'text-gray-400 hover:text-white'" class="pb-4 text-sm font-bold uppercase tracking-wider transition-colors whitespace-nowrap">
                 Compatibility
@@ -277,19 +428,20 @@ $thumbs = array_values(array_filter($product['thumbs'] ?? [$product['image']]));
                     <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
                         <i class="bi bi-lightning-charge text-brand-accent"></i> Power Requirements
                     </h3>
-                    <div class="flex items-center gap-8">
+
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-5 sm:gap-8">
                         <div class="text-center">
                             <div class="text-3xl font-display font-bold text-brand-accent">220W</div>
                             <div class="text-xs text-gray-500 mt-1">Graphics Card Power</div>
                         </div>
-                        <div class="h-12 w-px bg-white/10"></div>
+
                         <div class="text-center">
                             <div class="text-3xl font-display font-bold text-white">700W</div>
                             <div class="text-xs text-gray-500 mt-1">Recommended PSU</div>
                         </div>
-                        <div class="h-12 w-px bg-white/10"></div>
-                        <div class="text-center">
-                            <div class="text-3xl font-display font-bold text-white">1x 16-pin</div>
+
+                        <div class="text-center col-span-2 sm:col-span-1">
+                            <div class="text-2xl sm:text-3xl font-display font-bold text-white">1x 16-pin</div>
                             <div class="text-xs text-gray-500 mt-1">Power Connectors</div>
                         </div>
                     </div>
@@ -299,27 +451,45 @@ $thumbs = array_values(array_filter($product['thumbs'] ?? [$product['image']]));
             <!-- Description Tab -->
             <div x-show="activeTab === 'description'" x-transition class="prose prose-invert max-w-none">
                 <div class="text-gray-300 leading-relaxed space-y-4">
-                    <p class="text-lg">Experience ultra-high performance gaming and content creation with the NVIDIA GeForce RTX 4070 Super. Powered by the ultra-efficient NVIDIA Ada Lovelace architecture, this GPU brings a quantum leap in performance and AI-powered graphics.</p>
+
+                    @if(!empty($product->short_description))
+                    <p class="text-lg">{{ $product->short_description }}</p>
+                    @endif
+
+                    @if(!empty($product->description))
+                    <div class="whitespace-pre-line">
+                        {{ $product->description }}
+                    </div>
+                    @else
+                    <p class="text-gray-500">No description provided yet.</p>
+                    @endif
 
                     <div class="my-8 grid md:grid-cols-3 gap-6">
+                        @if(!empty($product->badge_text))
                         <div class="rounded-xl bg-white/5 p-6 text-center">
-                            <i class="bi bi-robot text-4xl text-brand-accent mb-4"></i>
-                            <h4 class="font-bold mb-2">DLSS 3</h4>
-                            <p class="text-sm text-gray-400">AI-powered performance multiplier for breakthrough FPS</p>
+                            <i class="bi bi-patch-check text-4xl text-brand-accent mb-4"></i>
+                            <h4 class="font-bold mb-2">Badge</h4>
+                            <p class="text-sm text-gray-400">{{ $product->badge_text }}</p>
                         </div>
+                        @endif
+
+                        @if(!empty($product->delivery_text))
                         <div class="rounded-xl bg-white/5 p-6 text-center">
-                            <i class="bi bi-brightness-high text-4xl text-brand-accent mb-4"></i>
-                            <h4 class="font-bold mb-2">Ray Tracing</h4>
-                            <p class="text-sm text-gray-400">Hyper-realistic lighting and reflections in real-time</p>
+                            <i class="bi bi-truck text-4xl text-brand-accent mb-4"></i>
+                            <h4 class="font-bold mb-2">Delivery</h4>
+                            <p class="text-sm text-gray-400">{{ $product->delivery_text }}</p>
                         </div>
+                        @endif
+
+                        @if($discount)
                         <div class="rounded-xl bg-white/5 p-6 text-center">
-                            <i class="bi bi-cpu text-4xl text-brand-accent mb-4"></i>
-                            <h4 class="font-bold mb-2">Reflex</h4>
-                            <p class="text-sm text-gray-400">Lowest latency for competitive gaming advantage</p>
+                            <i class="bi bi-percent text-4xl text-brand-accent mb-4"></i>
+                            <h4 class="font-bold mb-2">Discount</h4>
+                            <p class="text-sm text-gray-400">{{ (int)$discount }}% off</p>
                         </div>
+                        @endif
                     </div>
 
-                    <p>Built with 3rd generation RT cores and 4th generation Tensor cores, the RTX 4070 Super delivers 2x the performance and power efficiency of the previous generation. The advanced cooling solution ensures whisper-quiet operation even under heavy loads.</p>
                 </div>
             </div>
 
@@ -327,10 +497,12 @@ $thumbs = array_values(array_filter($product['thumbs'] ?? [$product['image']]));
             <div x-show="activeTab === 'reviews'" x-transition>
                 <div class="flex items-center gap-8 mb-8">
                     <div class="text-center">
-                        <div class="text-6xl font-display font-bold text-white">4.8</div>
+                        <div class="text-6xl font-display font-bold text-white">
+                            {{ number_format($rating, 1) }}
+                        </div>
                         <div class="flex items-center justify-center gap-1 my-2">
-                            @for($i = 0; $i < 5; $i++)
-                                <i class="bi bi-star-fill text-yellow-400"></i>
+                            @for($i = 1; $i <= 5; $i++)
+                                <i class="bi bi-star-fill {{ $i <= $stars ? 'text-yellow-400' : 'text-gray-600' }}"></i>
                                 @endfor
                         </div>
                         <div class="text-sm text-gray-400">Based on 128 reviews</div>
@@ -376,7 +548,7 @@ $thumbs = array_values(array_filter($product['thumbs'] ?? [$product['image']]));
                         </div>
                         <div class="flex items-center gap-1 mb-2">
                             @for($i = 0; $i < 5; $i++)
-                                <i class="bi bi-star-fill {{ $i < $review['rating'] ? 'text-yellow-400' : 'text-gray-600' }} text-sm"></i>
+                                <i class="bi bi-star-fill {{ $i < ($review['rating'] ?? 0) ? 'text-yellow-400' : 'text-gray-600' }} text-sm"></i>
                                 @endfor
                         </div>
                         <h4 class="font-bold text-white mb-2">{{ $review['title'] }}</h4>
@@ -390,10 +562,27 @@ $thumbs = array_values(array_filter($product['thumbs'] ?? [$product['image']]));
             <div x-show="activeTab === 'compatibility'" x-transition>
                 <div class="glass-panel rounded-2xl p-8 border border-white/10 text-center">
                     <i class="bi bi-motherboard text-6xl text-brand-accent mb-4"></i>
-                    <h3 class="text-xl font-bold mb-4">PC Builder Integration</h3>
-                    <p class="text-gray-400 mb-6">Check if this component is compatible with your current build</p>
-                    <button class="px-6 py-3 rounded-xl bg-brand-accent text-black font-bold hover:bg-white transition-colors">
-                        Open in PC Builder
+                    <h3 class="text-xl font-bold mb-2">Compatibility Check</h3>
+                    <p class="text-gray-400 mb-6">
+                        We’ll automatically verify compatibility with your build (CPU/Motherboard/RAM/PSU).
+                        <span class="text-gray-500">Coming soon.</span>
+                    </p>
+
+                    <div class="flex flex-wrap justify-center gap-3 mb-6">
+                        <span class="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm text-gray-300">
+                            Category: {{ $product->category?->name ?? '—' }}
+                        </span>
+                        <span class="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm text-gray-300">
+                            Condition: {{ ucfirst($product->condition ?? '—') }}
+                        </span>
+                        <span class="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm text-gray-300">
+                            Stock: {{ (int)($product->stock_qty ?? 0) }}
+                        </span>
+                    </div>
+
+                    <button disabled
+                        class="px-6 py-3 rounded-xl bg-white/10 text-gray-400 font-bold cursor-not-allowed">
+                        PC Builder Integration (Soon)
                     </button>
                 </div>
             </div>
@@ -405,13 +594,21 @@ $thumbs = array_values(array_filter($product['thumbs'] ?? [$product['image']]));
 <section class="py-16 border-t border-white/10">
     <h2 class="text-2xl font-display font-bold mb-8">Frequently Bought Together</h2>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        @foreach(collect($products)->where('slug','!=',$product['slug'])->take(4) as $item)
+        @foreach($related as $item)
+        @php
+        $imgPath = optional($item->images->firstWhere('is_primary', 1) ?? $item->images->first())->image_path;
+        $src = $imgPath ? asset('storage/' . ltrim($imgPath, '/')) : asset('images/placeholder.png');
+        @endphp
         <a href="{{ route('product.show', ['slug' => $item['slug']]) }}" class="group rounded-xl border border-white/5 bg-white/[0.02] p-4 hover:border-brand-accent/50 transition-all hover:-translate-y-1">
             <div class="aspect-square rounded-lg bg-white/5 mb-4 overflow-hidden">
-                <img src="{{ $item['image'] }}" class="w-full h-full object-cover opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500">
+                <img src="{{ $src }}"
+                    data-fallback="{{ asset('images/placeholder.png') }}"
+                    onerror="this.onerror=null; this.src=this.dataset.fallback;"
+                    class="w-full h-full object-cover opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500"
+                    alt="{{ $item->name }}" />
             </div>
-            <div class="text-sm font-medium text-white group-hover:text-brand-accent transition-colors mb-1">{{ $item['name'] }}</div>
-            <div class="text-sm font-bold text-brand-accent">AED {{ $item['price'] }}</div>
+            <div class="text-sm font-medium text-white group-hover:text-brand-accent transition-colors mb-1">{{ $item->name }}</div>
+            <div class="text-sm font-bold text-brand-accent">AED {{ number_format((float)$item->price, 2) }}</div>
         </a>
         @endforeach
     </div>

@@ -7,11 +7,28 @@ use Illuminate\Database\Eloquent\Model;
 class Product extends Model
 {
     protected $fillable = [
-        'category_id','name','slug','sku','condition','brand',
-        'short_description','description','price','compare_at_price',
-        'stock_qty','is_active','sort_order',
-        'badge_text','rating','rating_count','delivery_text',
-        'discount_percent','meta',
+        'category_id',
+        'name',
+        'slug',
+        'sku',
+        'condition',
+        'product_type',
+        'brand',
+        'short_description',
+        'description',
+        'price',
+        'compare_at_price',
+        'stock_qty',
+        'is_active',
+        'sort_order',
+        'badge_text',
+        'rating',
+        'rating_count',
+        'delivery_text',
+        'discount_percent',
+        'meta',
+        'video_path',
+        'video_size',
     ];
 
     protected $casts = [
@@ -23,7 +40,7 @@ class Product extends Model
 
     public function images()
     {
-        return $this->hasMany(ProductImage::class)->orderBy('sort_order');
+        return $this->hasMany(ProductImage::class)->orderByDesc('is_primary')->orderBy('id');
     }
 
     public function primaryImage()
@@ -46,5 +63,24 @@ class Product extends Model
 
         // if stored in public/images/...
         return asset(ltrim($path, '/'));
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+
+    public function getVideoUrlAttribute(): ?string
+    {
+        if (!$this->video_path) return null;
+
+        return asset('storage/' . ltrim($this->video_path, '/'));
+    }
+
+    public function wishlistedBy()
+    {
+        return $this->belongsToMany(\App\Models\User::class, 'wishlist_items')
+            ->withTimestamps();
     }
 }

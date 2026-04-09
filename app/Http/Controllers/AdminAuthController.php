@@ -18,11 +18,11 @@ class AdminAuthController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email' => ['required','email'],
-            'password' => ['required','string'],
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string'],
         ]);
 
-        if (!Auth::attempt($credentials, true)) {
+        if (!Auth::attempt($credentials, $request->boolean('remember'))) {
             return back()->withErrors(['email' => 'Invalid email or password'])->onlyInput('email');
         }
 
@@ -30,10 +30,12 @@ class AdminAuthController extends Controller
 
         if (!Auth::user()->is_admin) {
             Auth::logout();
-            return back()->with('error', 'Not allowed. Admin only.')->onlyInput('email');
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return back()->withErrors(['email' => 'Not allowed. Admin only.'])->onlyInput('email');
         }
 
-        return redirect()->route('admin.dashboard');
+        return redirect()->intended(route('admin.dashboard'));
     }
 
     public function logout(Request $request)

@@ -2,14 +2,25 @@
 
 @section('title', 'Digitron Computers UAE - Build Your Master PC')
 
+@section('page','home')
+@section('noLenis','1')
+
 @section('fullwidth')
 {{-- FULLSCREEN Hero Slider (PRESERVED) --}}
 <section id="vsHero" class="vs-hero" data-autoplay="1" data-interval="6500">
     {{-- Slide 1 --}}
     <article class="vs-slide is-active vs-slide1">
+        <video class="vs-bg-video" autoplay muted loop playsinline>
+            <source src="{{ asset('videos/slide-hero.mp4') }}" type="video/mp4">
+        </video>
+
         <div class="vs-overlay"></div>
         <div class="vs-content">
-            <h1 class="vs-title">Build Smarter. Shop Faster.</h1>
+            <h1 class="vs-title">
+                <span class="vs-white">Build Smarter.</span>
+                <!-- <span class="vs-accent">Shop Faster.</span> -->
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-accent to-brand-secondary">Shop Faster.</span>
+            </h1>
             <p class="vs-text">
                 New, used, and custom PCs — curated parts, trusted picks, and a smooth shopping experience for serious builders.
             </p>
@@ -24,9 +35,17 @@
 
     {{-- Slide 2 --}}
     <article class="vs-slide vs-slide2">
+        <video class="vs-bg-video" autoplay muted loop playsinline>
+            <source src="{{ asset('videos/video-ref-3.mp4') }}" type="video/mp4">
+        </video>
+
         <div class="vs-overlay"></div>
         <div class="vs-content">
-            <h1 class="vs-title">Next-Gen CPUs for Every Build</h1>
+            <h1 class="vs-title">
+                <span class="vs-white">Next-Gen CPUs</span>
+                <!-- <span class="vs-accent">for Every Build</span> -->
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-accent to-brand-secondary">for Every Build</span>
+            </h1>
             <p class="vs-text">
                 Shop Intel & AMD processors for gaming, streaming, and productivity — high clocks, more cores, and smooth performance.
             </p>
@@ -41,9 +60,17 @@
 
     {{-- Slide 3 --}}
     <article class="vs-slide vs-slide3">
+        <video class="vs-bg-video" autoplay muted loop playsinline>
+            <source src="{{ asset('videos/video-ref-4.mp4') }}" type="video/mp4">
+        </video>
+
         <div class="vs-overlay"></div>
         <div class="vs-content">
-            <h1 class="vs-title">Power Your Build with the Right GPU</h1>
+            <h1 class="vs-title">
+                <span class="vs-white">Power Your Build with the</span>
+                <!-- <span class="vs-accent">Right GPU</span> -->
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-accent to-brand-secondary">Right GPU</span>
+            </h1>
             <p class="vs-text">
                 Shop NVIDIA RTX and AMD Radeon graphics cards — smooth gaming, faster rendering, and the performance your setup deserves.
             </p>
@@ -60,86 +87,287 @@
     <div class="vs-dots" aria-label="Slider dots"></div>
 </section>
 
+
+{{-- Premium Showcase Section --}}
+<section class="dc-showcase-section relative py-16 overflow-hidden">
+    <div class="absolute inset-0 pointer-events-none">
+        <div class="absolute top-0 left-1/4 w-96 h-96 bg-brand-accent/5 rounded-full blur-[150px]"></div>
+        <div class="absolute bottom-0 right-1/4 w-80 h-80 bg-brand-secondary/5 rounded-full blur-[120px]"></div>
+        <div class="absolute inset-0 bg-grid-pattern opacity-[0.02]"></div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+
+        {{-- Top Showcase Grid --}}
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start mb-16">
+
+            {{-- Left: Poster Slider --}}
+            <div class="lg:col-span-7 min-w-0 relative z-10">
+                @php
+                $posters = $homePromoBanners ?? [];
+                $posterCount = count($posters);
+                @endphp
+                <div class="dc-poster-slider relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl shadow-black/50" id="dcPosterSlider">
+                    <div class="dc-poster-track relative w-full">
+                        @forelse($posters as $index => $poster)
+                        <div class="dc-poster-slide {{ $index === 0 ? 'is-active' : '' }}" data-index="{{ $index }}">
+                            <img
+                                src="{{ $poster['image'] }}"
+                                alt="Showcase Poster"
+                                class="dc-poster-image w-full h-auto block">
+                        </div>
+                        @empty
+                        <div class="dc-poster-empty bg-[#0a0a0f]"></div>
+                        @endforelse
+                    </div>
+
+                    @if($posterCount > 1)
+                    <button type="button" class="dc-poster-arrow prev absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white hover:bg-brand-accent hover:text-black hover:border-brand-accent transition-all z-10">
+                        <i class="bi bi-chevron-left text-xl"></i>
+                    </button>
+
+                    <button type="button" class="dc-poster-arrow next absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white hover:bg-brand-accent hover:text-black hover:border-brand-accent transition-all z-10">
+                        <i class="bi bi-chevron-right text-xl"></i>
+                    </button>
+
+                    <div class="dc-poster-dots absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                        @foreach($posters as $index => $poster)
+                        <button class="w-2 h-2 rounded-full bg-white/30 transition-all {{ $index === 0 ? 'w-8 bg-brand-accent' : '' }}" data-index="{{ $index }}"></button>
+                        @endforeach
+                    </div>
+
+                    <div class="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
+                        <div class="dc-poster-progress h-full bg-brand-accent transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                    @endif
+                </div>
+            </div>
+
+            {{-- Right: Promo Cards --}}
+            @php
+            $toneMap = [
+            'accent' => [
+            'border' => 'hover:border-brand-accent/50',
+            'overlay' => 'from-brand-accent/20 to-brand-secondary/10',
+            'iconWrap' => 'bg-brand-accent/10 text-brand-accent group-hover:bg-brand-accent group-hover:text-black',
+            'title' => 'group-hover:text-brand-accent',
+            'arrow' => 'group-hover:text-brand-accent',
+            ],
+            'emerald' => [
+            'border' => 'hover:border-emerald-500/50',
+            'overlay' => 'from-emerald-500/15 to-transparent',
+            'iconWrap' => 'bg-emerald-500/10 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-black',
+            'title' => 'group-hover:text-emerald-400',
+            'arrow' => 'group-hover:text-emerald-400',
+            ],
+            'secondary' => [
+            'border' => 'hover:border-brand-secondary/50',
+            'overlay' => 'from-brand-secondary/20 to-transparent',
+            'iconWrap' => 'bg-brand-secondary/10 text-brand-secondary group-hover:bg-brand-secondary group-hover:text-white',
+            'title' => 'group-hover:text-brand-secondary',
+            'arrow' => 'group-hover:text-brand-secondary',
+            ],
+            ];
+            @endphp
+
+            <div class="lg:col-span-5 min-w-0 relative z-20">
+                <div class="grid grid-cols-1 gap-4">
+                    @forelse($showcasePromos as $promo)
+                    @php
+                    $tone = $toneMap[$promo['tone'] ?? 'accent'] ?? $toneMap['accent'];
+                    @endphp
+
+                    <a href="{{ $promo['href'] ?? '#' }}"
+                        class="dc-promo-card group relative block overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] min-h-[154px] {{ $tone['border'] }} transition-all duration-500 hover:-translate-y-1">
+                        <div class="absolute inset-0 bg-gradient-to-br {{ $tone['overlay'] }} opacity-100 transition-opacity duration-500"></div>
+
+                        <div class="relative flex h-full items-center gap-4 p-6">
+                            <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-2xl transition-all duration-300 group-hover:scale-110 {{ $tone['iconWrap'] }}">
+                                <i class="bi {{ $promo['icon'] ?? 'bi-grid' }}"></i>
+                            </div>
+
+                            <div class="min-w-0 flex-1">
+                                <h4 class="text-xl font-bold text-white transition-colors {{ $tone['title'] }}">
+                                    {{ $promo['title'] ?? 'Untitled' }}
+                                </h4>
+                                <p class="mt-2 text-sm leading-6 text-gray-300">
+                                    {{ $promo['text'] ?? 'No text available.' }}
+                                </p>
+                            </div>
+
+                            <i class="bi bi-arrow-right shrink-0 text-gray-400 transition-all group-hover:translate-x-2 {{ $tone['arrow'] }}"></i>
+                        </div>
+                    </a>
+                    @empty
+                    <div class="rounded-2xl border border-red-500/40 bg-red-500/10 p-6 text-red-300">
+                        showcasePromos is empty
+                    </div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+
+        {{-- Shop by Category --}}
+        <div class="dc-categories-section relative mt-2">
+            <div class="flex items-end justify-between mb-10">
+                <div>
+                    <span class="text-brand-accent text-sm font-bold uppercase tracking-[0.3em] mb-2 block">Browse</span>
+                    <h2 class="text-4xl md:text-5xl font-display font-bold">
+                        SHOP BY
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-accent to-brand-secondary">CATEGORY</span>
+                    </h2>
+                </div>
+
+                <a href="{{ route('shop') }}" class="hidden md:inline-flex items-center gap-2 text-gray-400 hover:text-brand-accent transition-colors group">
+                    View All Categories
+                    <i class="bi bi-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                </a>
+            </div>
+
+            <div class="dc-categories-orbit relative">
+                <div class="absolute inset-0 pointer-events-none overflow-hidden">
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] border border-white/5 rounded-full"></div>
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-white/5 rounded-full"></div>
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] border border-white/5 rounded-full"></div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 relative z-10" id="dcCategoriesGrid">
+                    @php
+                    $categories = $homeShowcaseCategories ?? collect([
+                    (object)['category' => (object)['name' => 'Processors', 'slug' => 'processors'], 'primaryImage' => null],
+                    (object)['category' => (object)['name' => 'Graphics Cards', 'slug' => 'graphics-cards'], 'primaryImage' => null],
+                    (object)['category' => (object)['name' => 'Memory', 'slug' => 'ram'], 'primaryImage' => null],
+                    (object)['category' => (object)['name' => 'Storage', 'slug' => 'ssds'], 'primaryImage' => null],
+                    (object)['category' => (object)['name' => 'Motherboards', 'slug' => 'motherboards'], 'primaryImage' => null],
+                    (object)['category' => (object)['name' => 'Power Supplies', 'slug' => 'power-supply'], 'primaryImage' => null],
+                    ]);
+
+                    $accentColors = ['#00f0ff', '#7000ff', '#00ff88', '#ffaa00', '#ff2d55', '#38bdf8'];
+                    $orbitSpeedClasses = ['orbit-speed-20','orbit-speed-25','orbit-speed-30','orbit-speed-35','orbit-speed-40','orbit-speed-45'];
+                    @endphp
+
+                    @foreach($categories as $index => $item)
+                    @php
+                    $category = $item->category ?? $item['category'] ?? null;
+                    if (!$category) continue;
+
+                    $slug = $category->slug ?? $category['slug'] ?? '';
+                    $name = $category->name ?? $category['name'] ?? '';
+                    $image = $item->primaryImage
+                    ? asset('storage/' . $item->primaryImage->image_path)
+                    : asset('images/placeholder-product.png');
+                    $color = $accentColors[$index % count($accentColors)];
+                    @endphp
+
+                    <a href="{{ route('shop', ['category' => $slug]) }}"
+                        class="dc-orbit-category group relative flex flex-col items-center"
+                        data-color="{{ $color }}"
+                        style="--orbit-color: {{ $color }}">
+                        <div class="dc-orbit-ring absolute inset-0 rounded-full border-2 border-dashed border-white/10 group-hover:border-[var(--orbit-color)]/30 group-hover:animate-spin-slow transition-all duration-500 {{ $orbitSpeedClasses[$index % count($orbitSpeedClasses)] }}"></div>
+
+                        <div class="dc-orbit-glow absolute inset-4 rounded-full bg-[var(--orbit-color)]/0 group-hover:bg-[var(--orbit-color)]/20 blur-xl transition-all duration-500 group-hover:scale-150"></div>
+
+                        <div class="dc-orbit-circle relative w-32 h-32 md:w-40 md:h-40 rounded-full border border-white/10 bg-gradient-to-b from-white/10 to-transparent p-1 group-hover:scale-110 group-hover:border-[var(--orbit-color)]/50 transition-all duration-500 overflow-hidden">
+                            <div class="w-full h-full rounded-full bg-[#0a0a0f] flex items-center justify-center overflow-hidden relative">
+                                <img src="{{ $image }}" alt="{{ $name }}"
+                                    class="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-125 transition-all duration-700 mix-blend-screen">
+                                <div class="absolute inset-0 bg-gradient-to-t from-[var(--orbit-color)]/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 text-center relative">
+                            <h3 class="text-lg font-bold text-white group-hover:text-[var(--orbit-color)] transition-colors">{{ $name }}</h3>
+                            <span class="text-xs text-gray-500 group-hover:text-gray-300 transition-colors flex items-center justify-center gap-1 mt-1">
+                                Explore <i class="bi bi-arrow-right opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all"></i>
+                            </span>
+                        </div>
+                    </a>
+                    @endforeach
+                </div>
+
+                <div class="mt-8 text-center md:hidden">
+                    <a href="{{ route('shop') }}" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-white/20 text-white hover:border-brand-accent hover:text-brand-accent transition-colors">
+                        View All Categories
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        {{-- Stats --}}
+        <div class="mt-16 glass-panel rounded-2xl p-6 border border-white/10">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                @foreach($showcaseStats as $stat)
+                <div class="relative">
+                    <div class="text-3xl font-display font-bold mb-1 {{ $stat['tone'] }} counter" data-target="{{ $stat['value'] }}">
+                        0
+                    </div>
+                    <div class="text-xs text-gray-500 uppercase tracking-wider">
+                        {{ $stat['label'] }}
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+</section>
+
+
 {{-- Shop by Category (PRESERVED STRUCTURE, ENHANCED STYLE) --}}
 @php
-$slides = [
+$categorySpotlights = ($categorySpotlights ?? collect())->count()
+? $categorySpotlights
+: collect([
 [
 'cat' => 'processors',
 'kicker' => 'Boost performance',
 'title' => 'Next-Gen Processors',
 'name' => 'Intel / AMD CPUs',
-'desc' => 'Upgrade your build with the latest processors for gaming, editing, and heavy workloads. Fast clocks, more cores, better efficiency.',
+'desc' => 'Upgrade your build with modern processors for gaming, editing, and multitasking workloads.',
 'accent' => '#22c55e',
-'img' => asset('images/categories/processors.png'),
-],
-[
-'cat' => 'motherboards',
-'kicker' => 'Build stability',
-'title' => 'Feature-Rich Motherboards',
-'name' => 'ATX / mATX / ITX',
-'desc' => 'Strong VRMs, modern I/O, Wi-Fi, and premium chipsets — built for smooth upgrades and future compatibility.',
-'accent' => '#38bdf8',
-'img' => asset('images/categories/motherboards.png'),
-],
-[
-'cat' => 'ram',
-'kicker' => 'Speed matters',
-'title' => 'High-Performance RAM',
-'name' => 'DDR4 / DDR5 Kits',
-'desc' => 'More FPS, faster renders, and smoother multitasking with optimized memory frequencies and low latency.',
-'accent' => '#a78bfa',
-'img' => asset('images/categories/ram.png'),
+'img' => asset('images/placeholder-product.png'),
 ],
 [
 'cat' => 'graphics-cards',
 'kicker' => 'Power your visuals',
 'title' => 'Graphics Cards',
 'name' => 'NVIDIA / AMD GPUs',
-'desc' => 'Crush gaming and creative workloads with modern GPUs — ray tracing, AI features, and high VRAM options.',
+'desc' => 'High-performance graphics cards for gaming, rendering, and creator workflows.',
 'accent' => '#fb7185',
-'img' => asset('images/categories/gpu.png'),
+'img' => asset('images/placeholder-product.png'),
 ],
-[
-'cat' => 'ssds',
-'kicker' => 'Instant loading',
-'title' => 'Ultra-Fast SSDs',
-'name' => 'NVMe / SATA Storage',
-'desc' => 'Boot faster, load games instantly, and move files at high speed with reliable SSD performance.',
-'accent' => '#f59e0b',
-'img' => asset('images/categories/ssd.png'),
-],
-[
-'cat' => 'power-supply',
-'kicker' => 'Safe & efficient',
-'title' => 'Power Supplies',
-'name' => '80+ Rated PSUs',
-'desc' => 'Protect your components with stable power delivery, modular cables, and efficient certifications.',
-'accent' => '#60a5fa',
-'img' => asset('images/categories/tx-1600psu.png'),
-],
-];
+]);
 @endphp
+<section class="catHeroWrap catHeroFull relative z-10 py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div
+            id="catHero"
+            class="catHero catHeroFullInner"
+            data-autoplay="1"
+            data-interval="5200"
+            data-shop-base="{{ route('shop') }}"
+            data-slides='@json($categorySpotlights ?? [])'>
 
-<section class="catHeroWrap catHeroFull relative z-10">
-    <div id="catHero"
-        class="catHero catHeroFullInner"
-        data-autoplay="1"
-        data-interval="5000"
-        data-shop-base="{{ route('shop') }}"
-        data-slides='@json($slides)'>
+            <div class="catHeroHead catHeroHeadOverlay">
+                <div>
+                    <span class="text-brand-accent text-sm font-bold uppercase tracking-[0.28em] block mb-2">
+                        Upgrade Paths
+                    </span>
+                    <h2>Explore Performance Zones</h2>
+                </div>
 
-        <div class="catHeroHead catHeroHeadOverlay">
-            <h2>Shop by Category</h2>
-            <a href="{{ route('shop') }}">View all</a>
+                <a href="{{ route('shop') }}">View all categories</a>
+            </div>
+
+            <div class="catHeroStage"></div>
+
+            <div class="catHeroNav">
+                <button type="button" class="catPrev" aria-label="Previous">‹</button>
+                <button type="button" class="catNext" aria-label="Next">›</button>
+            </div>
+
+            <div class="catHeroDots" aria-label="Dots"></div>
         </div>
-        <div class="catHeroStage"></div>
-
-        <div class="catHeroNav">
-            <button type="button" class="catPrev" aria-label="Previous">‹</button>
-            <button type="button" class="catNext" aria-label="Next">›</button>
-        </div>
-
-        <div class="catHeroDots" aria-label="Dots"></div>
     </div>
 </section>
 @endsection
@@ -147,18 +375,35 @@ $slides = [
 @section('content')
 
 {{-- Interactive PC Builder Section --}}
-<section id="builder" class="py-24 relative overflow-hidden">
+<section id="builder" class="py-24 relative">
     <!-- Background Grid Effect -->
     <div class="absolute inset-0 bg-grid-pattern opacity-[0.03] pointer-events-none"></div>
 
     <div class="text-center mb-16 reveal-text">
-        <h2 class="text-4xl md:text-5xl font-display font-bold mb-4">CUSTOM <span class="text-brand-accent">PC BUILDER</span></h2>
+        <!-- <h2 class="text-4xl md:text-5xl font-display font-bold mb-4">CUSTOM <span class="text-brand-accent">PC BUILDER</span></h2> -->
+        <h2 class="text-4xl md:text-5xl font-display font-bold mb-4">
+                            CUSTOM <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-accent to-brand-secondary">PC BUILDER</span>
+                        </h2>
         <p class="text-gray-400 max-w-2xl mx-auto">Select your components and see your dream PC come to life. Real-time compatibility checking and performance estimation.</p>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {{-- Component Selection Area --}}
         <div class="lg:col-span-8 space-y-6">
+            @php
+            $cpuItems = $builder['cpu'] ?? collect();
+            $gpuItems = $builder['gpu'] ?? collect();
+            $ramItems = $builder['ram'] ?? collect();
+
+            $getImg = function($p){
+            $imgs = $p->images ?? collect();
+            return $imgs->first()
+            ? asset('storage/' . ltrim($imgs->first()->image_path, '/'))
+            : asset('images/placeholder-product.png');
+            };
+
+            $fmt = fn($n) => number_format((int)$n);
+            @endphp
 
             {{-- CPU Category --}}
             <div class="glass-panel rounded-xl p-6 component-category" data-category="cpu">
@@ -166,49 +411,60 @@ $slides = [
                     <h3 class="text-xl font-bold flex items-center gap-2">
                         <i class="bi bi-cpu text-brand-accent"></i> Processor
                     </h3>
-                    <span class="text-xs text-gray-500 uppercase tracking-wider">Step 1</span>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="component-card bg-[#0f1115] p-4 rounded-lg border border-white/5 cursor-pointer group" onclick="selectComponent('cpu', this, {name: 'Intel Core i9-14900K', price: 1800, watts: 253, perf: 100})">
-                        <div class="h-32 bg-white/[0.03] border border-white/5 rounded mb-3 overflow-hidden relative">
-                            <img src="{{ asset('images/products/i9-14900k.png') }}"
-                                class="w-full h-full object-contain p-3 opacity-80 group-hover:opacity-100 transition-opacity"
-                                alt="Intel i9">
-                        </div>
-                        <h4 class="font-bold text-sm">Intel Core i9-14900K</h4>
-                        <p class="text-xs text-gray-400 mt-1">24 Cores | 6.0 GHz</p>
-                        <div class="mt-3 flex justify-between items-center">
-                            <span class="text-brand-accent font-bold">AED 1,800</span>
-                            <div class="w-2 h-2 rounded-full bg-gray-600 status-dot"></div>
-                        </div>
-                    </div>
-                    <div class="component-card bg-[#0f1115] p-4 rounded-lg border border-white/5 cursor-pointer group" onclick="selectComponent('cpu', this, {name: 'AMD Ryzen 9 7950X', price: 1600, watts: 170, perf: 95})">
-                        <div class="h-32 bg-white/[0.03] border border-white/5 rounded mb-3 overflow-hidden relative">
-                            <img src="{{ asset('images/products/ryzen-7-7800x3d.png') }}"
-                                class="w-full h-full object-contain p-3 opacity-80 group-hover:opacity-100 transition-opacity"
-                                alt="Ryzen CPU">
-                        </div>
-                        <h4 class="font-bold text-sm">AMD Ryzen 9 7950X</h4>
-                        <p class="text-xs text-gray-400 mt-1">16 Cores | 5.7 GHz</p>
-                        <div class="mt-3 flex justify-between items-center">
-                            <span class="text-brand-accent font-bold">AED 1,600</span>
-                            <div class="w-2 h-2 rounded-full bg-gray-600 status-dot"></div>
-                        </div>
-                    </div>
-                    <div class="component-card bg-[#0f1115] p-4 rounded-lg border border-white/5 cursor-pointer group" onclick="selectComponent('cpu', this, {name: 'Intel Core i5-13600K', price: 900, watts: 125, perf: 70})">
-                        <div class="h-32 bg-white/[0.03] border border-white/5 rounded mb-3 overflow-hidden relative">
-                            <img src="{{ asset('images/products/i9-14900k.png') }}"
-                                class="w-full h-full object-contain p-3 opacity-80 group-hover:opacity-100 transition-opacity"
-                                alt="Intel CPU">
-                        </div>
-                        <h4 class="font-bold text-sm">Intel Core i5-13600K</h4>
-                        <p class="text-xs text-gray-400 mt-1">14 Cores | 5.1 GHz</p>
-                        <div class="mt-3 flex justify-between items-center">
-                            <span class="text-brand-accent font-bold">AED 900</span>
-                            <div class="w-2 h-2 rounded-full bg-gray-600 status-dot"></div>
-                        </div>
+
+                    <div class="flex items-center gap-2">
+                        <button type="button" class="builder-nav builder-prev w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10"
+                            data-target="#cpuTrack">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <button type="button" class="builder-nav builder-next w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10"
+                            data-target="#cpuTrack">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
                     </div>
                 </div>
+
+                @if($cpuItems->count())
+                <div id="cpuTrack" class="builder-track flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2">
+                    @foreach($cpuItems as $p)
+                    @php
+                    $img = $getImg($p);
+                    $price = (int)($p->price ?? 0);
+                    $watts = (int)($p->watts ?? 120);
+                    $perf = (int)($p->perf_score ?? 70);
+
+                    $payload = [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'price' => $price,
+                    'watts' => $watts,
+                    'perf' => $perf,
+                    'cartUrl' => route('cart.add', $p->id),
+                    ];
+                    @endphp
+
+                    <div class="component-card min-w-[260px] md:min-w-[280px] snap-start bg-[#0f1115] p-4 rounded-lg border border-white/10 hover:border-white/20 transition relative cursor-pointer group"
+                        data-payload='@json($payload)'
+                        onclick="selectComponentFromCard('cpu', this)">
+                        <div class="h-32 bg-white/[0.03] border border-white/5 rounded mb-3 overflow-hidden relative">
+                            <img src="{{ $img }}" class="w-full h-full object-contain p-3 opacity-80 group-hover:opacity-100 transition-opacity" alt="{{ $p->name }}">
+                        </div>
+
+                        <h4 class="font-bold text-sm truncate">{{ $p->name }}</h4>
+                        <p class="text-xs text-gray-400 mt-1 line-clamp-1">{{ $p->short_specs ?? $p->specs ?? '—' }}</p>
+
+                        <div class="mt-3 flex justify-between items-center">
+                            <span class="text-brand-accent font-bold">AED {{ $fmt($price) }}</span>
+                            <div class="w-2 h-2 rounded-full bg-gray-600 status-dot"></div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+                @else
+                <div class="text-gray-500 text-sm italic py-8 text-center">
+                    No CPU products found yet. Add products in Admin → Products (Category: Processors).
+                </div>
+                @endif
             </div>
 
             {{-- GPU Category --}}
@@ -217,43 +473,57 @@ $slides = [
                     <h3 class="text-xl font-bold flex items-center gap-2">
                         <i class="bi bi-gpu-card text-brand-secondary"></i> Graphics Card
                     </h3>
-                    <span class="text-xs text-gray-500 uppercase tracking-wider">Step 2</span>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="component-card bg-[#0f1115] p-4 rounded-lg border border-white/5 cursor-pointer group" onclick="selectComponent('gpu', this, {name: 'RTX 4090 24GB', price: 5500, watts: 450, perf: 100})">
-                        <div class="h-32 bg-white/[0.03] border border-white/5 rounded mb-3 overflow-hidden relative">
-                            <img src="{{ asset('images/products/rtx-4090-super.png') }}" class="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity mix-blend-screen" alt="RTX 4090">
-                        </div>
-                        <h4 class="font-bold text-sm">NVIDIA RTX 4090</h4>
-                        <p class="text-xs text-gray-400 mt-1">24GB GDDR6X | 4K Gaming</p>
-                        <div class="mt-3 flex justify-between items-center">
-                            <span class="text-brand-accent font-bold">AED 5,500</span>
-                            <div class="w-2 h-2 rounded-full bg-gray-600 status-dot"></div>
-                        </div>
-                    </div>
-                    <div class="component-card bg-[#0f1115] p-4 rounded-lg border border-white/5 cursor-pointer group" onclick="selectComponent('gpu', this, {name: 'RX 7900 XTX', price: 3800, watts: 355, perf: 85})">
-                        <div class="h-32 bg-white/[0.03] border border-white/5 rounded mb-3 overflow-hidden relative">
-                            <img src="{{ asset('images/products/rx-7900-xtx.png') }}" class="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity mix-blend-screen" alt="RX 7900 XTX">
-                        </div>
-                        <h4 class="font-bold text-sm">AMD RX 7900 XTX</h4>
-                        <p class="text-xs text-gray-400 mt-1">24GB GDDR6 | Ray Tracing</p>
-                        <div class="mt-3 flex justify-between items-center">
-                            <span class="text-brand-accent font-bold">AED 3,800</span>
-                            <div class="w-2 h-2 rounded-full bg-gray-600 status-dot"></div>
-                        </div>
-                    </div>
-                    <div class="component-card bg-[#0f1115] p-4 rounded-lg border border-white/5 cursor-pointer group" onclick="selectComponent('gpu', this, {name: 'RTX 4070 Ti', price: 2800, watts: 285, perf: 75})">
-                        <div class="h-32 bg-white/[0.03] border border-white/5 rounded mb-3 overflow-hidden relative">
-                            <img src="{{ asset('images/products/rtx-4070-ti.png') }}" class="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity mix-blend-screen" alt="rtx-4070-ti">
-                        </div>
-                        <h4 class="font-bold text-sm">NVIDIA RTX 4070 Ti</h4>
-                        <p class="text-xs text-gray-400 mt-1">12GB GDDR6X | 1440p</p>
-                        <div class="mt-3 flex justify-between items-center">
-                            <span class="text-brand-accent font-bold">AED 2,800</span>
-                            <div class="w-2 h-2 rounded-full bg-gray-600 status-dot"></div>
-                        </div>
+
+                    <div class="flex items-center gap-2">
+                        <button type="button" class="builder-nav builder-prev w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10"
+                            data-target="#gpuTrack">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <button type="button" class="builder-nav builder-next w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10"
+                            data-target="#gpuTrack">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
                     </div>
                 </div>
+
+                @if($gpuItems->count())
+                <div id="gpuTrack"
+                    class="builder-track flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2">
+                    @foreach($gpuItems as $p)
+
+                    @php
+                    $img = $getImg($p);
+                    $price = (int)($p->price ?? 0);
+                    $watts = (int)($p->watts ?? 250);
+                    $perf = (int)($p->perf_score ?? 80);
+
+                    $payload = ['id'=>$p->id,'name'=>$p->name,'price'=>$price,'watts'=>$watts,'perf'=>$perf, 'cartUrl' => route('cart.add', $p->id),];
+                    @endphp
+
+                    <div class="component-card min-w-[260px] md:min-w-[280px] snap-start bg-[#0f1115] p-4 rounded-lg border border-white/5 cursor-pointer group"
+                        data-payload='@json($payload)'
+                        onclick="selectComponentFromCard('gpu', this)">
+                        <div class="h-32 bg-white/[0.03] border border-white/5 rounded mb-3 overflow-hidden relative">
+                            <img src="{{ $img }}"
+                                class="w-full h-full object-contain p-3 opacity-80 group-hover:opacity-100 transition-opacity"
+                                alt="{{ $p->name }}">
+                        </div>
+
+                        <h4 class="font-bold text-sm truncate">{{ $p->name }}</h4>
+                        <p class="text-xs text-gray-400 mt-1 line-clamp-1">{{ $p->short_specs ?? $p->specs ?? '—' }}</p>
+
+                        <div class="mt-3 flex justify-between items-center">
+                            <span class="text-brand-accent font-bold">AED {{ $fmt($price) }}</span>
+                            <div class="w-2 h-2 rounded-full bg-gray-600 status-dot"></div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+                @else
+                <div class="text-gray-500 text-sm italic py-8 text-center">
+                    No GPU products found yet. Add products in Admin → Products (Category: Graphics Cards).
+                </div>
+                @endif
             </div>
 
             {{-- RAM Category --}}
@@ -262,42 +532,65 @@ $slides = [
                     <h3 class="text-xl font-bold flex items-center gap-2">
                         <i class="bi bi-memory text-brand-danger"></i> Memory
                     </h3>
-                    <span class="text-xs text-gray-500 uppercase tracking-wider">Step 3</span>
+
+                    <div class="flex items-center gap-2">
+                        <button type="button" class="builder-nav builder-prev w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10"
+                            data-target="#ramTrack">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <button type="button" class="builder-nav builder-next w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10"
+                            data-target="#ramTrack">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="component-card bg-[#0f1115] p-4 rounded-lg border border-white/5 cursor-pointer group" onclick="selectComponent('ram', this, {name: '32GB DDR5 6000MHz', price: 600, watts: 10, perf: 10})">
-                        <div class="h-32 rounded mb-3 overflow-hidden relative bg-white/[0.03] border border-white/5">
-                            <img src="{{ asset('images/products/ddr5-32gb.png') }}"
+
+                @if($ramItems->count())
+                <div id="ramTrack"
+                    class="builder-track flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2">
+                    @foreach($ramItems as $p)
+
+                    @php
+                    $img = $getImg($p);
+                    $price = (int)($p->price ?? 0);
+                    $watts = (int)($p->watts ?? 250);
+                    $perf = (int)($p->perf_score ?? 80);
+
+                    $payload = ['id'=>$p->id,'name'=>$p->name,'price'=>$price,'watts'=>$watts,'perf'=>$perf, 'cartUrl' => route('cart.add', $p->id),];
+                    @endphp
+
+                    <div class="component-card min-w-[260px] md:min-w-[280px] snap-start bg-[#0f1115] p-4 rounded-lg border border-white/5 cursor-pointer group"
+                        data-payload='@json($payload)'
+                        onclick="selectComponentFromCard('ram', this)">
+                        <div class="h-32 bg-white/[0.03] border border-white/5 rounded mb-3 overflow-hidden relative">
+                            <img src="{{ $img }}"
                                 class="w-full h-full object-contain p-3 opacity-80 group-hover:opacity-100 transition-opacity"
-                                alt="RAM">
+                                alt="{{ $p->name }}">
                         </div>
-                        <h4 class="font-bold text-sm">32GB DDR5 6000MHz</h4>
-                        <p class="text-xs text-gray-400 mt-1">Corsair Dominator RGB</p>
+
+                        <h4 class="font-bold text-sm truncate">{{ $p->name }}</h4>
+                        <p class="text-xs text-gray-400 mt-1 line-clamp-1">{{ $p->short_specs ?? $p->specs ?? '—' }}</p>
+
                         <div class="mt-3 flex justify-between items-center">
-                            <span class="text-brand-accent font-bold">AED 600</span>
+                            <span class="text-brand-accent font-bold">AED {{ $fmt($price) }}</span>
                             <div class="w-2 h-2 rounded-full bg-gray-600 status-dot"></div>
                         </div>
                     </div>
-                    <div class="component-card bg-[#0f1115] p-4 rounded-lg border border-white/5 cursor-pointer group" onclick="selectComponent('ram', this, {name: '64GB DDR5 5600MHz', price: 1200, watts: 15, perf: 15})">
-                        <div class="h-32 rounded mb-3 overflow-hidden relative bg-white/[0.03] border border-white/5">
-                            <img src="{{ asset('images/products/ddr5-64gb.png') }}"
-                                class="w-full h-full object-contain p-3 opacity-80 group-hover:opacity-100 transition-opacity"
-                                alt="RAM">
-                        </div>
-                        <h4 class="font-bold text-sm">64GB DDR5 5600MHz</h4>
-                        <p class="text-xs text-gray-400 mt-1">G.Skill Trident Z5</p>
-                        <div class="mt-3 flex justify-between items-center">
-                            <span class="text-brand-accent font-bold">AED 1,200</span>
-                            <div class="w-2 h-2 rounded-full bg-gray-600 status-dot"></div>
-                        </div>
-                    </div>
+                    @endforeach
                 </div>
+                @else
+                <div class="text-gray-500 text-sm italic py-8 text-center">
+                    No RAM products found yet. Add products in Admin → Products (Category: Memory).
+                </div>
+                @endif
             </div>
         </div>
 
         {{-- Sticky Summary Sidebar --}}
         <div class="lg:col-span-4">
-            <div class="sticky top-24 glass-panel rounded-xl p-6 border-t-4 border-t-brand-accent shadow-2xl shadow-brand-accent/10">
+            <div
+                class="self-start glass-panel rounded-xl p-6 border-t-4 border-t-brand-accent shadow-2xl shadow-brand-accent/10"
+                style="position: sticky; top: 112px;">
                 <h3 class="text-2xl font-display font-bold mb-6 border-b border-white/10 pb-4">Build Summary</h3>
 
                 <div id="build-list" class="space-y-3 mb-6 min-h-[150px]">
@@ -326,8 +619,12 @@ $slides = [
                     <span class="text-3xl font-display font-bold text-white">AED <span id="total-price">0</span></span>
                 </div>
 
-                <button class="w-full bg-brand-accent hover:bg-white text-black font-bold py-4 rounded-lg transition-colors flex items-center justify-center gap-2 group">
-                    Add to Cart <i class="bi bi-cart-check group-hover:translate-x-1 transition-transform"></i>
+                <button
+                    id="builderAddToCartBtn"
+                    type="button"
+                    class="w-full bg-brand-accent hover:bg-white text-black font-bold py-4 rounded-lg transition-colors flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span id="builderAddToCartText">Add to Cart</span>
+                    <i class="bi bi-cart-check group-hover:translate-x-1 transition-transform"></i>
                 </button>
             </div>
         </div>
@@ -378,6 +675,78 @@ $slides = [
             <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80"></div>
             <div class="absolute bottom-0 left-0 p-6">
                 <h3 class="text-xl font-bold">Cooling</h3>
+            </div>
+        </div>
+    </div>
+</section>
+
+@endsection
+
+@section('cta')
+
+{{-- HOME CTA: Quote + Store --}}
+<section class="py-20 relative overflow-hidden">
+    {{-- soft glows --}}
+    <div class="absolute -top-24 -left-24 w-96 h-96 bg-brand-accent/10 blur-[120px] rounded-full pointer-events-none"></div>
+    <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-brand-secondary/10 blur-[120px] rounded-full pointer-events-none"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="glass-panel relative rounded-3xl border border-white/10 overflow-hidden">
+            {{-- subtle pattern --}}
+            <div class="absolute inset-0 bg-grid-pattern opacity-[0.04] pointer-events-none"></div>
+            {{-- top highlight --}}
+            <div class="absolute inset-x-0 -top-20 h-40 bg-gradient-to-b from-white/10 to-transparent pointer-events-none"></div>
+
+            <div class="relative p-8 md:p-12 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10">
+                {{-- left --}}
+                <div class="max-w-2xl">
+                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-brand-accent/25 bg-brand-accent/10 mb-5">
+                        <span class="w-2 h-2 rounded-full bg-brand-accent animate-pulse"></span>
+                        <span class="text-brand-accent text-xs md:text-sm font-bold uppercase tracking-[0.25em]">
+                            Ready to build?
+                        </span>
+                    </div>
+
+                    <h3 class="text-3xl md:text-4xl font-display font-bold mb-2">
+                        Get a custom quote <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-accent to-brand-secondary">fast</span>
+                    </h3>
+
+                    <p class="text-gray-400 mt-3 text-base md:text-lg leading-relaxed">
+                        Share your budget + use case (gaming, editing, streaming, office). We’ll recommend the best parts and pricing—no guesswork.
+                    </p>
+
+                    {{-- small perks --}}
+                    <div class="mt-6 flex flex-wrap gap-3 text-sm text-gray-300">
+                        <span class="px-3 py-1.5 rounded-full border border-white/10 bg-white/5">
+                            <i class="bi bi-clock-history text-brand-accent"></i> Fast response
+                        </span>
+                        <span class="px-3 py-1.5 rounded-full border border-white/10 bg-white/5">
+                            <i class="bi bi-shield-check text-brand-accent"></i> Expert checked
+                        </span>
+                        <span class="px-3 py-1.5 rounded-full border border-white/10 bg-white/5">
+                            <i class="bi bi-cpu text-brand-accent"></i> Compatibility ensured
+                        </span>
+                    </div>
+                </div>
+
+                {{-- right --}}
+                <div class="w-full lg:w-auto flex flex-col sm:flex-row gap-3">
+                    <a href="{{ route('quote') }}#quote-section"
+                        class="group inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl
+                    bg-gradient-to-r from-brand-accent to-brand-secondary text-black font-black
+                    shadow-lg shadow-brand-accent/20 hover:shadow-xl hover:shadow-brand-accent/30 transition">
+                        Contact Us
+                        <i class="bi bi-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </a>
+
+                    <a href="{{ route('shop') }}"
+                        class="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl
+                    border border-white/20 bg-white/5 text-white font-bold
+                    hover:bg-white/10 hover:border-brand-accent/50 hover:text-brand-accent transition">
+                        Browse Store
+                        <i class="bi bi-bag"></i>
+                    </a>
+                </div>
             </div>
         </div>
     </div>

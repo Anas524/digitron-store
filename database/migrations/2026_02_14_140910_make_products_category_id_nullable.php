@@ -1,0 +1,45 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('products', function (Blueprint $table) {
+            // drop existing FK first
+            $table->dropForeign(['category_id']);
+        });
+
+        Schema::table('products', function (Blueprint $table) {
+            // make column nullable
+            $table->unsignedBigInteger('category_id')->nullable()->change();
+        });
+
+        Schema::table('products', function (Blueprint $table) {
+            // add FK back (nullable allowed)
+            $table->foreign('category_id')->references('id')->on('categories')->nullOnDelete();
+            // or ->cascadeOnDelete() if you prefer
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('products', function (Blueprint $table) {
+            $table->dropForeign(['category_id']);
+        });
+
+        Schema::table('products', function (Blueprint $table) {
+            $table->unsignedBigInteger('category_id')->nullable(false)->change();
+        });
+
+        Schema::table('products', function (Blueprint $table) {
+            $table->foreign('category_id')->references('id')->on('categories')->cascadeOnDelete();
+        });
+    }
+};

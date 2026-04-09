@@ -21,6 +21,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'is_admin',
     ];
 
     /**
@@ -44,5 +45,21 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function wishlistProducts()
+    {
+        return $this->belongsToMany(\App\Models\Product::class, 'wishlist_items')
+            ->withTimestamps();
+    }
+
+    public function cartItems()
+    {
+        return $this->hasMany(\App\Models\CartItem::class);
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(\App\Models\Order::class);
     }
 }

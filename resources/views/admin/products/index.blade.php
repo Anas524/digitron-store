@@ -3,110 +3,212 @@
 @section('title','Products')
 
 @section('content')
-<div class="min-h-screen p-8">
-  <div class="flex items-center justify-between mb-6">
-    <div>
-      <h1 class="text-3xl font-display font-bold">Products</h1>
-      <p class="text-gray-400">Create, edit, delete and manage images.</p>
-    </div>
+@php
+$csrf = csrf_token();
+$categories = $categories ?? collect();
+@endphp
 
-    <a href="{{ route('admin.products.create') }}"
-       class="px-5 py-3 rounded-xl bg-brand-accent text-black font-bold hover:bg-white transition">
-      + Add Product
-    </a>
+<div
+  id="adminProductsCfg"
+  class="hidden"
+  data-csrf="{{ csrf_token() }}"
+  data-store-url="{{ route('admin.products.store') }}">
+</div>
+
+<div x-data="{ mobileRailOpen: false }" class="relative min-h-full">
+  <!-- Mobile overlay for products rail -->
+  <div
+    x-cloak
+    x-show="mobileRailOpen"
+    x-transition.opacity
+    class="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden"
+    @click="mobileRailOpen = false">
   </div>
 
-  @if(session('success'))
-    <div class="toast mb-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-200 px-4 py-3">
-      {{ session('success') }}
+  <!-- Mobile top bar -->
+  <div class="lg:hidden sticky top-0 z-20 glass-panel border-b border-white/10 px-4 py-4 mb-4">
+    <div class="flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <!-- Admin sidebar toggle -->
+        <button
+          type="button"
+          class="w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition shrink-0"
+          @click.stop="mobileRailOpen = false; sidebarOpen = true"
+          aria-label="Open admin sidebar">
+          <i class="bi bi-list text-xl"></i>
+        </button>
+
+        <div class="min-w-0">
+          <h1 class="text-2xl font-display font-bold leading-tight">Products</h1>
+          <p class="text-sm text-gray-400 truncate">Inline create & edit.</p>
+        </div>
+      </div>
+
+      <!-- Products rail toggle -->
+      <button
+        type="button"
+        class="w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition shrink-0"
+        @click.stop="mobileRailOpen = true"
+        aria-label="Open products list">
+        <i class="bi bi-grid"></i>
+      </button>
     </div>
-  @endif
-
-  <div class="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-    <table class="w-full text-sm">
-      <thead class="bg-white/5 text-gray-300">
-        <tr>
-          <th class="text-left p-4">Product</th>
-          <th class="text-left p-4">Price</th>
-          <th class="text-left p-4">Stock</th>
-          <th class="text-left p-4">Status</th>
-          <th class="text-right p-4">Actions</th>
-        </tr>
-      </thead>
-
-      <tbody class="divide-y divide-white/10">
-        @forelse($products as $p)
-          <tr class="hover:bg-white/5">
-            <td class="p-4">
-              <div class="flex items-center gap-3">
-                @php
-                  $img = optional($p->primaryImage)->image_path;
-                @endphp
-                <div class="w-14 h-14 rounded-xl overflow-hidden bg-white/5 border border-white/10">
-                  @if($img)
-                    <img src="{{ asset('storage/'.$img) }}" class="w-full h-full object-cover" alt="">
-                  @endif
-                </div>
-                <div>
-                  <div class="font-semibold text-white">{{ $p->name }}</div>
-                  <div class="text-gray-400 text-xs">{{ $p->brand ?? '—' }} • {{ $p->sku ?? '—' }}</div>
-                  @if($p->badge_text)
-                    <span class="inline-block mt-1 text-[11px] px-2 py-1 rounded-full bg-white/10 text-gray-200">
-                      {{ $p->badge_text }}
-                    </span>
-                  @endif
-                </div>
-              </div>
-            </td>
-
-            <td class="p-4 text-white">
-              AED {{ number_format($p->price, 2) }}
-              @if($p->compare_at_price)
-                <div class="text-xs text-gray-400 line-through">
-                  AED {{ number_format($p->compare_at_price, 2) }}
-                </div>
-              @endif
-            </td>
-
-            <td class="p-4 text-white">{{ $p->stock_qty ?? 0 }}</td>
-
-            <td class="p-4">
-              @if($p->is_active)
-                <span class="px-3 py-1 rounded-full text-xs bg-emerald-500/15 text-emerald-200 border border-emerald-500/30">Active</span>
-              @else
-                <span class="px-3 py-1 rounded-full text-xs bg-yellow-500/15 text-yellow-200 border border-yellow-500/30">Draft</span>
-              @endif
-            </td>
-
-            <td class="p-4">
-              <div class="flex justify-end gap-2">
-                <a href="{{ route('admin.products.edit',$p) }}"
-                   class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition">
-                  Edit
-                </a>
-
-                <form method="POST" action="{{ route('admin.products.destroy',$p) }}"
-                      onsubmit="return confirm('Delete this product?')">
-                  @csrf
-                  @method('DELETE')
-                  <button class="px-4 py-2 rounded-lg bg-red-500/15 text-red-200 border border-red-500/30 hover:bg-red-500/25 transition">
-                    Delete
-                  </button>
-                </form>
-              </div>
-            </td>
-          </tr>
-        @empty
-          <tr>
-            <td colspan="5" class="p-6 text-center text-gray-400">No products found.</td>
-          </tr>
-        @endforelse
-      </tbody>
-    </table>
   </div>
 
-  <div class="mt-6">
-    {{ $products->links() }}
+  <!-- Mobile products rail drawer -->
+  <aside
+    class="fixed inset-y-0 left-0 z-40 w-[300px] max-w-[88vw] glass-panel border-r border-white/10 h-screen flex flex-col overflow-hidden transform transition-transform duration-300 ease-in-out lg:hidden"
+    :class="mobileRailOpen ? 'translate-x-0' : '-translate-x-full'">
+
+    <div class="p-5 border-b border-white/10 relative overflow-hidden shrink-0 flex items-center justify-between gap-3 bg-white/[0.02]">
+      <div class="flex items-center gap-2 min-w-0">
+        <div class="text-lg font-display font-bold">Products</div>
+        <span class="text-xs px-2 py-1 rounded-full bg-white/10 border border-white/10 text-gray-300">
+          {{ $products->total() }}
+        </span>
+      </div>
+
+      <button
+        type="button"
+        class="w-10 h-10 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center text-gray-300 hover:text-white hover:bg-white/10 transition"
+        @click.stop="mobileRailOpen = false"
+        aria-label="Close products list">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div class="p-4 border-b border-white/10">
+      <div class="relative">
+        <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+        <input
+          id="prodSearchMobile"
+          type="text"
+          placeholder="Search product..."
+          class="w-full pl-9 pr-3 py-2.5 rounded-xl bg-white/5 border border-white/10 outline-none focus:border-brand-accent text-sm">
+      </div>
+    </div>
+
+    <div
+      id="railListMobile"
+      class="flex-1 overflow-y-auto custom-scrollbar px-4 py-4 space-y-2">
+      @foreach($products as $i => $p)
+      <button
+        type="button"
+        class="rail-item-mobile w-full text-left px-3 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10"
+        data-id="{{ $p->id }}"
+        data-jump="prod-{{ $p->id }}"
+        data-name="{{ strtolower($p->name) }}"
+        @click="mobileRailOpen = false">
+        <div class="flex items-center justify-between">
+          <div class="text-xs text-gray-400">
+            S.NO {{ ($products->firstItem() ?? 1) + $i }}
+          </div>
+          <i class="bi bi-chevron-right text-gray-500"></i>
+        </div>
+        <div class="text-sm font-semibold text-white truncate">{{ $p->name }}</div>
+        <div class="text-xs text-gray-400 truncate">{{ $p->brand ?? '—' }} • {{ $p->sku ?? '—' }}</div>
+      </button>
+      @endforeach
+    </div>
+
+    <div class="p-4 border-t border-white/10">
+      <button
+        id="addProductBtnMobile"
+        type="button"
+        class="w-full px-4 py-3 rounded-xl bg-brand-accent text-black font-bold hover:bg-white transition flex items-center justify-center gap-2"
+        @click="mobileRailOpen = false">
+        <i class="bi bi-plus-circle"></i> Add Product
+      </button>
+    </div>
+  </aside>
+
+  <div class="relative">
+    <div class="min-h-full">
+      <div class="grid grid-cols-12 gap-4 lg:gap-6 p-0 lg:p-6 min-h-0">
+        {{-- LEFT RAIL DESKTOP --}}
+        <aside class="col-span-12 lg:col-span-3 hidden lg:block">
+          <div class="sticky top-6 h-[calc(100vh-3rem)] flex flex-col overflow-hidden">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="text-xl font-display font-bold">Products</div>
+              <span class="text-xs px-2 py-1 rounded-full bg-white/10 border border-white/10 text-gray-300">
+                {{ $products->total() }}
+              </span>
+            </div>
+
+            <div class="relative">
+              <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+              <input id="prodSearch" type="text" placeholder="Search product..."
+                class="w-full pl-9 pr-3 py-2.5 rounded-xl bg-white/5 border border-white/10 outline-none focus:border-brand-accent text-sm">
+            </div>
+
+            <div id="railList" data-left-rail data-scroll-lock class="mt-3 flex-1 overflow-y-auto custom-scrollbar pr-2 pl-2 py-2 space-y-2">
+              @foreach($products as $i => $p)
+              <button type="button"
+                class="rail-item w-full text-left px-3 py-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10"
+                data-id="{{ $p->id }}"
+                data-jump="prod-{{ $p->id }}"
+                data-name="{{ strtolower($p->name) }}">
+                <div class="flex items-center justify-between">
+                  <div class="text-xs text-gray-400">
+                    <span data-rail-sno>S.NO {{ ($products->firstItem() ?? 1) + $i }}</span>
+                  </div>
+                  <i class="bi bi-chevron-right text-gray-500"></i>
+                </div>
+                <div class="text-sm font-semibold text-white truncate">{{ $p->name }}</div>
+                <div class="text-xs text-gray-400 truncate">{{ $p->brand ?? '—' }} • {{ $p->sku ?? '—' }}</div>
+              </button>
+              @endforeach
+            </div>
+
+            <div class="pt-3 pb-2 lg:pb-4">
+              <button id="addProductBtn"
+                class="w-full px-4 py-3 rounded-xl bg-brand-accent text-black font-bold hover:bg-white transition flex items-center justify-center gap-2">
+                <i class="bi bi-plus-circle"></i> Add Product
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        {{-- RIGHT CONTENT --}}
+        <section class="col-span-12 lg:col-span-9 min-w-0 min-h-0">
+          <div
+            id="adminRightScroll"
+            class="min-h-0 lg:h-full overflow-visible lg:overflow-y-auto custom-scrollbar px-0 lg:px-3 py-3 overscroll-contain"
+            data-right-scroll>
+
+            @if(session('success'))
+            <div class="toast mb-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-200 px-4 py-3">
+              {{ session('success') }}
+            </div>
+            @endif
+
+            <div id="cardsWrap" class="space-y-4">
+              @foreach($products as $i => $p)
+              @include('admin.partials.product_card', [
+              'p' => $p,
+              'sno' => ($products->firstItem() ?? 1) + $i,
+              'csrf' => $csrf,
+              'categories' => $categories,
+              ])
+              @endforeach
+            </div>
+
+            <div class="mt-6">
+              {{ $products->links() }}
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
   </div>
 </div>
+
+<template id="draftCardTpl">
+  @include('admin.partials.product_card', [
+  'p' => null,
+  'sno' => 'NEW',
+  'csrf' => $csrf,
+  'categories' => $categories,
+  ])
+</template>
 @endsection
