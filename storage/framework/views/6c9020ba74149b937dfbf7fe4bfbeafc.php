@@ -2,6 +2,8 @@
 
 <?php $__env->startSection('page','product'); ?>
 
+<?php $__env->startSection('whatsapp_message', 'Hello Digitron Computers UAE, I am interested in ' . $product->name . ' (SKU: ' . ($product->sku ?? 'N/A') . '). Please share availability and final price.'); ?>
+
 <?php $__env->startSection('fullwidth'); ?>
 
 <?php

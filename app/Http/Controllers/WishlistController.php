@@ -18,11 +18,26 @@ class WishlistController extends Controller
         $wishlistCount = $items->count();
         $wishlistTotal = $items->sum(fn($p) => (int) ($p->price ?? 0));
 
+        $wishlistIds = $items->pluck('id');
+
+        $categoryIds = $items->pluck('category_id')->filter()->unique();
+
         $recommended = Product::query()
-            ->whereNotIn('id', $items->pluck('id'))
+            ->whereNotIn('id', $wishlistIds)
+            ->when($categoryIds->isNotEmpty(), function ($q) use ($categoryIds) {
+                $q->whereIn('category_id', $categoryIds);
+            })
+            ->with(['images' => fn($q) => $q->orderByDesc('is_primary')->orderBy('sort_order')])
             ->inRandomOrder()
             ->take(4)
             ->get();
+
+        if ($recommended->isEmpty()) {
+            $recommended = Product::with(['images' => fn($q) => $q->orderByDesc('is_primary')->orderBy('sort_order')])
+                ->inRandomOrder()
+                ->take(4)
+                ->get();
+        }
 
         return view('pages.shop.wishlist', [
             'items' => $items,

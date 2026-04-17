@@ -217,29 +217,56 @@
 </section>
 
 
+<?php
+    // ensure variable exists
+    $recentProducts = $recentProducts ?? collect();
+
+    // fallback if empty
+    if ($recentProducts->isEmpty()) {
+        $recentProducts = \App\Models\Product::with(['images' => fn($q) => $q->orderByDesc('is_primary')->orderBy('sort_order')])
+            ->latest()
+            ->take(4)
+            ->get();
+    }
+?>
+
 <section class="py-16 border-t border-white/10">
     <div class="flex items-center justify-between mb-8">
-        <h2 class="text-2xl font-display font-bold">Recently Viewed</h2>
-        <a href="#" class="text-sm text-brand-accent hover:text-white transition-colors">View All</a>
-    </div>
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <?php
-        $recent = $products->take(4); // takes first 4 from current page
-        ?>
+        <h2 class="text-2xl font-display font-bold">
+            <?php echo e(count(session('recently_viewed', [])) > 1 ? 'Recently Viewed' : 'You May Like'); ?>
 
-        <?php $__currentLoopData = $recent; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $p): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-        <a href="<?php echo e(route('product.show', ['slug' => $p->slug])); ?>"
-            class="group rounded-xl border border-white/5 bg-white/[0.02] p-3 hover:border-white/20 transition-colors">
-            <div class="aspect-square rounded-lg bg-white/5 mb-3 overflow-hidden">
-                <img src="<?php echo e($p->primary_image_url); ?>"
-                    class="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity">
-            </div>
-            <div class="text-xs text-gray-400 mb-1"><?php echo e(ucfirst($p->condition ?? 'New')); ?></div>
-            <div class="text-sm font-medium text-white truncate"><?php echo e($p->name); ?></div>
-            <div class="text-sm font-bold text-brand-accent mt-1">AED <?php echo e(number_format($p->price, 0)); ?></div>
-        </a>
+        </h2>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <?php $__currentLoopData = $recentProducts; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $p): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <a href="<?php echo e(route('product.show', $p->slug)); ?>"
+               class="group rounded-xl border border-white/5 bg-white/[0.02] p-3 hover:border-white/20 transition-colors">
+
+                <div class="aspect-square rounded-lg bg-white/5 mb-3 overflow-hidden">
+                    <img src="<?php echo e($p->primary_image_url); ?>"
+                         class="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity">
+                </div>
+
+                <div class="text-xs text-gray-400 mb-1">
+                    <?php echo e(ucfirst($p->condition ?? 'New')); ?>
+
+                </div>
+
+                <div class="text-sm font-medium text-white truncate">
+                    <?php echo e($p->name); ?>
+
+                </div>
+
+                <div class="text-sm font-bold text-brand-accent mt-1">
+                    AED <?php echo e(number_format($p->price, 0)); ?>
+
+                </div>
+
+            </a>
         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
     </div>
 </section>
+
 <?php $__env->stopSection(); ?>
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\DigitronComputers\digitron-store\resources\views/pages/shop.blade.php ENDPATH**/ ?>

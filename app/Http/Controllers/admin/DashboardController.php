@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\User;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
@@ -73,8 +74,11 @@ class DashboardController extends Controller
 
         $newQuotesCount = 0;
         $newNewsletterCount = 0;
+        $newChatbotLeadsCount = 0;
+
         $quoteNotifications = collect();
         $newsletterNotifications = collect();
+        $chatbotLeadNotifications = collect();
 
         if (Schema::hasTable('quotes')) {
             if (Schema::hasColumn('quotes', 'status')) {
@@ -94,7 +98,7 @@ class DashboardController extends Controller
                             'title' => $quote->full_name ?? 'Customer',
                             'subtitle' => $quote->quote_type ?? 'Quote request',
                             'time' => !empty($quote->created_at)
-                                ? \Carbon\Carbon::parse($quote->created_at)->diffForHumans()
+                                ? Carbon::parse($quote->created_at)->diffForHumans()
                                 : 'recently',
                             'icon' => 'file-text',
                             'color' => 'admin-warning',
@@ -124,7 +128,7 @@ class DashboardController extends Controller
                             'title' => $sub->email ?? 'New subscriber',
                             'subtitle' => 'Newsletter subscription',
                             'time' => !empty($sub->created_at)
-                                ? \Carbon\Carbon::parse($sub->created_at)->diffForHumans()
+                                ? Carbon::parse($sub->created_at)->diffForHumans()
                                 : 'recently',
                             'icon' => 'envelope-paper',
                             'color' => 'admin-primary',
@@ -137,13 +141,47 @@ class DashboardController extends Controller
             }
         }
 
+        if (Schema::hasTable('chatbot_leads')) {
+            if (Schema::hasColumn('chatbot_leads', 'status')) {
+                $newChatbotLeadsCount = DB::table('chatbot_leads')
+                    ->where('status', 'new')
+                    ->count();
+
+                $chatbotLeadNotifications = DB::table('chatbot_leads')
+                    ->where('status', 'new')
+                    ->orderByDesc('id')
+                    ->limit(8)
+                    ->get()
+                    ->map(function ($lead) {
+                        $productName = $lead->product_name ?: 'General inquiry';
+                        $message = Str::limit($lead->message ?? 'New chatbot message', 45);
+
+                        return [
+                            'type' => 'chatbot_lead',
+                            'id' => $lead->id,
+                            'title' => $productName,
+                            'subtitle' => $message,
+                            'time' => !empty($lead->created_at)
+                                ? Carbon::parse($lead->created_at)->diffForHumans()
+                                : 'recently',
+                            'icon' => 'chat-dots',
+                            'color' => 'admin-success',
+                            'sort_time' => !empty($lead->created_at) ? strtotime($lead->created_at) : 0,
+                        ];
+                    });
+            } else {
+                $newChatbotLeadsCount = DB::table('chatbot_leads')->count();
+            }
+        }
+
         $notifications = $quoteNotifications
             ->concat($newsletterNotifications)
+            ->concat($chatbotLeadNotifications)
             ->sortByDesc('sort_time')
             ->take(10)
             ->values();
 
-        $notificationCount = $newQuotesCount + $newNewsletterCount;
+        $notificationCount = $newQuotesCount + $newNewsletterCount + $newChatbotLeadsCount;
 
         $stats = [
             [
@@ -193,6 +231,7 @@ class DashboardController extends Controller
             'notificationCount' => $notificationCount,
             'newQuotesCount' => $newQuotesCount,
             'newNewsletterCount' => $newNewsletterCount,
+            'newChatbotLeadsCount' => $newChatbotLeadsCount,
             'notifications' => $notifications,
         ]);
     }
@@ -304,6 +343,23 @@ class DashboardController extends Controller
                     'icon' => 'box-seam',
                     'color' => 'admin-primary',
                     'sort_time' => !empty($product->created_at) ? strtotime($product->created_at) : 0,
+                ];
+            }
+        }
+
+        if (Schema::hasTable('chatbot_leads')) {
+            $chatbotLeads = DB::table('chatbot_leads')->latest()->limit(5)->get();
+
+            foreach ($chatbotLeads as $lead) {
+                $activities[] = [
+                    'title' => 'Chatbot lead',
+                    'desc' => $lead->product_name ?: 'General inquiry',
+                    'time' => !empty($lead->created_at)
+                        ? Carbon::parse($lead->created_at)->diffForHumans()
+                        : 'recently',
+                    'icon' => 'chat-dots',
+                    'color' => 'admin-success',
+                    'sort_time' => !empty($lead->created_at) ? strtotime($lead->created_at) : 0,
                 ];
             }
         }

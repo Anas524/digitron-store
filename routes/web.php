@@ -20,7 +20,11 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Auth\CustomerAuthController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\Admin\HomeShowcaseController;
+use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\AdminCategoryController;
+
+use App\Http\Controllers\ChatbotLeadController;
+use App\Http\Controllers\AdminChatbotLeadController;
 
 Route::get('/__ping', fn() => 'LARAVEL OK');
 
@@ -54,10 +58,14 @@ Route::middleware('auth')->group(function () {
 // =======================
 Route::prefix('admin')->name('admin.')->group(function () {
 
-    // block direct /admin/login
-    Route::get('/login', fn() => redirect()->route('home'))->name('login');
+    // Admin login redirect (uses frontend login panel)
+    Route::get('/login', function () {
+        return redirect()->route('home')
+            ->with('openAccountPanel', 1)
+            ->with('accountTab', 'login');
+    })->name('login');
 
-    // login submit (navbar dropdown)
+    // Admin login submit
     Route::post('/login', [AdminAuthController::class, 'login'])
         ->name('login.post');
 
@@ -104,6 +112,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('categories', [AdminCategoryController::class, 'store'])->name('categories.store');
         Route::put('categories/{category}', [AdminCategoryController::class, 'update'])->name('categories.update');
         Route::delete('categories/{category}', [AdminCategoryController::class, 'destroy'])->name('categories.destroy');
+
+        // Chatbot
+        Route::get('/chatbot-leads', [AdminChatbotLeadController::class, 'index'])->name('chatbot-leads.index');
+        Route::patch('/chatbot-leads/{chatbotLead}/status', [AdminChatbotLeadController::class, 'updateStatus'])->name('chatbot-leads.update-status');
+
+        // Control tax & shipping
+        Route::get('/settings', [SettingController::class, 'index'])->name('settings');
+        Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
     });
 });
 
@@ -128,6 +144,17 @@ Route::middleware('auth')->group(function () {
     Route::post('/checkout/place-order', [CartController::class, 'placeOrder'])->name('checkout.place');
     Route::get('/checkout/complete/{order}', [CartController::class, 'complete'])->name('checkout.complete');
     Route::get('/my-orders', [CartController::class, 'myOrders'])->name('my.orders');
+
+    Route::get('/account', [CartController::class, 'account'])->name('account');
+    Route::put('/account', [CartController::class, 'updateAccount'])->name('account.update');
+
+    Route::get('/my-orders/{order}', [CartController::class, 'myOrderShow'])->name('my.orders.show');
+
+    Route::get('/addresses', [CartController::class, 'addresses'])->name('addresses');
+    Route::post('/addresses', [CartController::class, 'storeAddress'])->name('addresses.store');
+    Route::put('/addresses/{address}', [CartController::class, 'updateAddress'])->name('addresses.update');
+    Route::delete('/addresses/{address}', [CartController::class, 'deleteAddress'])->name('addresses.delete');
+    Route::post('/addresses/{address}/default', [CartController::class, 'setDefaultAddress'])->name('addresses.default');
 });
 
 // Route::get('/login', function () {
@@ -140,5 +167,8 @@ Route::post('/cart/add/{product}', [CartController::class, 'add'])->name('cart.a
 Route::post('/cart/update/{product}', [CartController::class, 'update'])->name('cart.update');
 Route::delete('/cart/remove/{product}', [CartController::class, 'remove'])->name('cart.remove');
 Route::delete('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
+Route::post('/cart/apply-coupon', [CartController::class, 'applyCoupon'])->name('cart.applyCoupon');
 
 Route::view('/about', 'pages.about')->name('about');
+
+Route::post('/chatbot-leads', [ChatbotLeadController::class, 'store'])->name('chatbot-leads.store');

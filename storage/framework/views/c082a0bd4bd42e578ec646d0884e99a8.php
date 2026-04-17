@@ -285,7 +285,7 @@ $wishlistTotal = $items->sum(fn($p) => (int)($p->price ?? 0));
                 $rImg = $rec->primary_image_url ?? asset('images/placeholder-product.png');
             ?>
 
-            <a href="#" class="group rounded-xl border border-white/5 bg-white/[0.02] p-4 hover:border-brand-accent/30 transition-all hover:-translate-y-1">
+            <a href="<?php echo e(route('product.show', $rec->slug)); ?>" class="group rounded-xl border border-white/5 bg-white/[0.02] p-4 hover:border-brand-accent/30 transition-all hover:-translate-y-1">
                 <div class="aspect-square rounded-lg bg-white/5 mb-4 overflow-hidden">
                     <img src="<?php echo e($rImg); ?>" class="w-full h-full object-cover opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500">
                 </div>

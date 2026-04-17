@@ -91,48 +91,51 @@
                                 </div>
                             </div>
 
-                            <a href="<?php echo e(route('admin.quotes.index')); ?>" class="text-xs text-admin-primary hover:underline whitespace-nowrap shrink-0">
+                            <a href="<?php echo e(route('admin.chatbot-leads.index')); ?>" class="text-xs text-admin-primary hover:underline whitespace-nowrap shrink-0">
                                 View All
                             </a>
                         </div>
 
                         <div class="max-h-96 overflow-y-auto custom-scrollbar">
                             <?php $__empty_1 = true; $__currentLoopData = ($notifications ?? []); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $note): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                            <?php if($note['type'] === 'quote'): ?>
-                            <a href="<?php echo e(route('admin.quotes.index')); ?>"
-                                class="notification-item block px-4 py-3 border-b border-white/5 hover:bg-white/5 transition"
-                                data-quote-id="<?php echo e($note['id']); ?>">
-                                <?php else: ?>
-                                <a href="<?php echo e(route('admin.newsletter.index')); ?>"
-                                    class="block px-4 py-3 border-b border-white/5 hover:bg-white/5 transition">
-                                    <?php endif; ?>
-                                    <div class="flex items-start gap-3 min-w-0">
-                                        <div class="w-10 h-10 rounded-xl bg-<?php echo e($note['color']); ?>/10 text-<?php echo e($note['color']); ?> flex items-center justify-center shrink-0">
-                                            <i class="bi bi-<?php echo e($note['icon']); ?>"></i>
+                            <?php
+                            $noteUrl = match($note['type']) {
+                            'quote' => route('admin.quotes.index'),
+                            'newsletter' => route('admin.newsletter.index'),
+                            'chatbot_lead' => route('admin.chatbot-leads.index'),
+                            default => route('admin.dashboard'),
+                            };
+                            ?>
+
+                            <a href="<?php echo e($noteUrl); ?>"
+                                class="block px-4 py-3 border-b border-white/5 hover:bg-white/5 transition">
+                                <div class="flex items-start gap-3 min-w-0">
+                                    <div class="w-10 h-10 rounded-xl bg-<?php echo e($note['color']); ?>/10 text-<?php echo e($note['color']); ?> flex items-center justify-center shrink-0">
+                                        <i class="bi bi-<?php echo e($note['icon']); ?>"></i>
+                                    </div>
+
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-semibold text-white truncate">
+                                            <?php echo e($note['title']); ?>
+
                                         </div>
-
-                                        <div class="flex-1 min-w-0">
-                                            <div class="text-sm font-semibold text-white truncate">
-                                                <?php echo e($note['title']); ?>
-
-                                            </div>
-                                            <div class="text-xs text-gray-400 truncate">
-                                                <?php echo e($note['subtitle']); ?>
-
-                                            </div>
-                                        </div>
-
-                                        <div class="text-[11px] text-gray-500 shrink-0">
-                                            <?php echo e($note['time']); ?>
+                                        <div class="text-xs text-gray-400 truncate">
+                                            <?php echo e($note['subtitle']); ?>
 
                                         </div>
                                     </div>
-                                </a>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-                                <div class="px-4 py-8 text-center text-sm text-gray-500">
-                                    No new notifications
+
+                                    <div class="text-[11px] text-gray-500 shrink-0">
+                                        <?php echo e($note['time']); ?>
+
+                                    </div>
                                 </div>
-                                <?php endif; ?>
+                            </a>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                            <div class="px-4 py-8 text-center text-sm text-gray-500">
+                                No new notifications
+                            </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>

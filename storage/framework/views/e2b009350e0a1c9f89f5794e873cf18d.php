@@ -2,6 +2,8 @@
 
 <?php $__env->startSection('title', 'Shopping Cart | Digitron Computers UAE'); ?>
 
+<?php $__env->startSection('whatsapp_message', 'Hello Digitron Computers UAE, I need help with the items in my cart. Please assist me.'); ?>
+
 <?php $__env->startSection('page','cart'); ?>
 
 <?php $__env->startSection('fullwidth'); ?>
@@ -55,7 +57,7 @@
 <?php $__env->startSection('content'); ?>
 
 <?php
-$hasUnavailableItems = collect($items)->contains(fn($item) => ($item['stock'] ?? '') !== 'In Stock');
+$hasUnavailableItems = collect($items)->contains(fn($item) => ($item['stock'] ?? '') === 'Out of Stock');
 ?>
 
 <section class="py-12 -mt-8 relative z-20">
@@ -195,33 +197,68 @@ $hasUnavailableItems = collect($items)->contains(fn($item) => ($item['stock'] ??
 
                     <!-- Calculations -->
                     <div class="space-y-3 mb-6 text-sm">
+
                         <div class="flex justify-between text-gray-400">
                             <span>Subtotal (<?php echo e($count); ?> items)</span>
-                            <span id="subtotal">AED <?php echo e(number_format($subtotal)); ?></span>
+                            <span>AED <?php echo e(number_format($subtotal, 2)); ?></span>
                         </div>
+
                         <div class="flex justify-between text-gray-400">
                             <span>Shipping</span>
-                            <span class="text-emerald-400">FREE</span>
+                            <span>
+                                <?php if($shipping == 0): ?>
+                                <span class="text-emerald-400">FREE</span>
+                                <?php else: ?>
+                                AED <?php echo e(number_format($shipping, 2)); ?>
+
+                                <?php endif; ?>
+                            </span>
                         </div>
+
                         <div class="flex justify-between text-gray-400">
-                            <span>Estimated Tax (5%)</span>
-                            <span id="tax">AED <?php echo e(number_format($tax)); ?></span>
+                            <span>Estimated Tax</span>
+                            <span>AED <?php echo e(number_format($tax, 2)); ?></span>
                         </div>
+
+                        <?php if($discount > 0): ?>
                         <div class="flex justify-between text-brand-accent">
                             <span>Discount</span>
-                            <span>-AED 0</span>
+                            <span class="text-red-400">
+                                - AED <?php echo e(number_format($discount, 2)); ?>
+
+                            </span>
                         </div>
+                        <?php endif; ?>
+
                     </div>
 
                     <!-- Coupon -->
                     <div class="mb-6">
-                        <div class="flex gap-2">
-                            <input type="text" placeholder="Enter coupon code"
-                                class="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-sm focus:outline-none focus:border-brand-accent transition-colors">
-                            <button class="px-4 py-3 rounded-xl bg-white/10 hover:bg-brand-accent hover:text-black transition-colors font-medium text-sm">
-                                Apply
-                            </button>
-                        </div>
+
+                        <?php if(session('success')): ?>
+                        <div class="text-green-400 text-sm mb-2"><?php echo e(session('success')); ?></div>
+                        <?php endif; ?>
+
+                        <?php if(session('error')): ?>
+                        <div class="text-red-400 text-sm mb-2"><?php echo e(session('error')); ?></div>
+                        <?php endif; ?>
+
+                        <form method="POST" action="<?php echo e(route('cart.applyCoupon')); ?>">
+                            <?php echo csrf_field(); ?>
+                            <div class="flex gap-2">
+                                <input
+                                    type="text"
+                                    name="code"
+                                    placeholder="Enter coupon code"
+                                    class="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-sm focus:outline-none focus:border-brand-accent"
+                                    required>
+                                <button
+                                    type="submit"
+                                    class="px-4 py-3 rounded-xl bg-white/10 hover:bg-brand-accent hover:text-black transition-colors font-medium text-sm">
+                                    Apply
+                                </button>
+                            </div>
+                        </form>
                     </div>
 
                     <!-- Total -->
@@ -230,7 +267,7 @@ $hasUnavailableItems = collect($items)->contains(fn($item) => ($item['stock'] ??
                             <span class="text-gray-400">Total</span>
                             <div class="text-right">
                                 <div class="text-xs text-gray-500 mb-1">AED</div>
-                                <div class="text-4xl font-display font-bold text-white" id="final-total"><?php echo e(number_format($total)); ?></div>
+                                <div class="text-4xl font-display font-bold text-white" id="final-total"><?php echo e(number_format($total, 2)); ?></div>
                             </div>
                         </div>
                         <div class="text-xs text-gray-500 mt-2 text-right">Including VAT</div>

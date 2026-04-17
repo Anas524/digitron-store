@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Address;
+use App\Models\Setting;
 use Illuminate\Support\Facades\DB;
 
 class CartController extends Controller
@@ -90,8 +92,8 @@ class CartController extends Controller
         })->filter()->values();
 
         $subtotal = $items->sum(fn($it) => $it['price'] * $it['qty']);
-        $tax = (int) round($subtotal * 0.05);
-        $total = $subtotal + $tax;
+
+        $totals = $this->calculateTotals($subtotal);
 
         $recentIds = session()->get('recently_viewed', []);
         $inCartIds = array_map('intval', array_keys($cart));
@@ -127,8 +129,10 @@ class CartController extends Controller
         return view('pages.shop.cart', [
             'items' => $items,
             'subtotal' => $subtotal,
-            'tax' => $tax,
-            'total' => $total,
+            'tax' => $totals['tax'],
+            'shipping' => $totals['shipping'],
+            'discount' => $totals['discount'],
+            'total' => $totals['total'],
             'count' => $items->sum('qty'),
             'recentProducts' => $recentProducts,
         ]);
@@ -292,15 +296,23 @@ class CartController extends Controller
         }
 
         $subtotal = $items->sum('subtotal');
-        $tax = (int) round($subtotal * 0.05);
-        $total = $subtotal + $tax;
+
+        $totals = $this->calculateTotals($subtotal);
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        $defaultAddress = $user?->defaultAddress;
 
         return view('pages.shop.checkout', [
             'items' => $items,
             'subtotal' => $subtotal,
-            'tax' => $tax,
-            'total' => $total,
+            'tax' => $totals['tax'],
+            'shipping' => $totals['shipping'],
+            'discount' => $totals['discount'],
+            'total' => $totals['total'],
             'count' => $items->sum('qty'),
+            'defaultAddress' => $defaultAddress,
         ]);
     }
 
@@ -322,6 +334,22 @@ class CartController extends Controller
         }
 
         $products = Product::whereIn('id', array_keys($cart))->get()->keyBy('id');
+
+        $invalid = collect($cart)->first(function ($qty, $pid) use ($products) {
+            $p = $products->get((int) $pid);
+
+            if (!$p) return true;
+            if (!(bool) $p->is_active) return true;
+            if ((int) $p->stock_qty <= 0) return true;
+            if ((int) $qty > (int) $p->stock_qty) return true;
+
+            return false;
+        });
+
+        if ($invalid !== null) {
+            return redirect()->route('cart')
+                ->with('error', 'Some items are out of stock. Please update your cart.');
+        }
 
         $items = collect($cart)->map(function ($qty, $pid) use ($products) {
             $p = $products->get((int) $pid);
@@ -345,41 +373,77 @@ class CartController extends Controller
         }
 
         $subtotal = (float) $items->sum('subtotal');
-        $tax = (float) round($subtotal * 0.05, 2);
-        $total = $subtotal + $tax;
 
-        $order = DB::transaction(function () use ($data, $items, $subtotal, $tax, $total, $request) {
-            $order = Order::create([
-                'user_id' => Auth::id(),
-                'order_number' => 'DCUAE-' . now()->format('Ymd') . '-' . strtoupper(\Illuminate\Support\Str::random(6)),
-                'full_name' => $data['full_name'],
-                'email' => $data['email'],
-                'phone' => $data['phone'],
-                'city' => $data['city'],
-                'address' => $data['address'],
-                'subtotal' => $subtotal,
-                'tax' => $tax,
-                'total_amount' => $total,
-                'payment_method' => 'cash_on_delivery',
-                'payment_status' => 'unpaid',
-                'order_status' => 'pending',
-            ]);
+        $totals = $this->calculateTotals($subtotal);
 
-            foreach ($items as $item) {
-                $order->items()->create($item);
+        $tax = $totals['tax'];
+        $shipping = $totals['shipping'];
+        $discount = $totals['discount'];
+        $total = $totals['total'];
+
+        try {
+            $order = DB::transaction(function () use ($data, $items, $subtotal, $tax, $shipping, $discount, $total, $request) {
+                $order = Order::create([
+                    'user_id' => Auth::id(),
+                    'order_number' => 'DCUAE-' . now()->format('Ymd') . '-' . strtoupper(\Illuminate\Support\Str::random(6)),
+                    'full_name' => $data['full_name'],
+                    'email' => $data['email'],
+                    'phone' => $data['phone'],
+                    'city' => $data['city'],
+                    'address' => $data['address'],
+                    'subtotal' => $subtotal,
+                    'tax' => $tax,
+                    'shipping' => $shipping,
+                    'discount' => $discount,
+                    'total_amount' => $total,
+                    'payment_method' => 'cash_on_delivery',
+                    'payment_status' => 'unpaid',
+                    'order_status' => 'pending',
+                ]);
+
+                foreach ($items as $item) {
+                    $product = Product::lockForUpdate()->find($item['product_id']);
+
+                    if (!$product || !$product->is_active) {
+                        throw new \Exception('One of the selected products is no longer available.');
+                    }
+
+                    if ((int) $product->stock_qty < (int) $item['quantity']) {
+                        throw new \Exception("Insufficient stock for {$product->name}.");
+                    }
+
+                    $order->items()->create($item);
+
+                    $product->decrement('stock_qty', (int) $item['quantity']);
+                }
+
+                if (Auth::check()) {
+                    \App\Models\CartItem::where('user_id', Auth::id())->delete();
+                } else {
+                    $request->session()->forget('cart');
+                }
+
+                return $order;
+            });
+
+            // Increase coupon usage AFTER successful order
+            if (session('coupon')) {
+                $coupon = \App\Models\Coupon::where('code', session('coupon'))->first();
+
+                if ($coupon) {
+                    $coupon->increment('used_count');
+                }
+
+                session()->forget('coupon');
             }
 
-            if (Auth::check()) {
-                \App\Models\CartItem::where('user_id', Auth::id())->delete();
-            } else {
-                $request->session()->forget('cart');
-            }
-
-            return $order;
-        });
-
-        return redirect()->route('checkout.complete', $order->id)
-            ->with('success', 'Your order has been placed successfully.');
+            return redirect()->route('checkout.complete', $order->id)
+                ->with('success', 'Your order has been placed successfully.');
+        } catch (\Throwable $e) {
+            return redirect()->route('checkout')
+                ->withInput()
+                ->with('error', $e->getMessage());
+        }
     }
 
     public function complete(Order $order)
@@ -399,5 +463,233 @@ class CartController extends Controller
             ->get();
 
         return view('pages.shop.my-orders', compact('orders'));
+    }
+
+    public function account()
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        return view('pages.shop.account', compact('user'));
+    }
+
+    public function updateAccount(Request $request)
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:120'],
+            'email' => ['required', 'email', 'max:190', 'unique:users,email,' . $user->id],
+        ]);
+
+        $user->update($data);
+
+        return redirect()->route('account')->with('success', 'Profile updated successfully.');
+    }
+
+    public function myOrderShow(Order $order)
+    {
+        abort_unless($order->user_id === Auth::id(), 403);
+
+        $order->load('items');
+
+        return view('pages.shop.order-show', compact('order'));
+    }
+
+    public function addresses()
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        $addresses = $user->addresses()
+            ->latest()
+            ->get();
+
+        return view('pages.shop.addresses', compact('addresses'));
+    }
+
+    public function storeAddress(Request $request)
+    {
+        $data = $request->validate([
+            'full_name' => ['required', 'string', 'max:150'],
+            'email' => ['required', 'email', 'max:190'],
+            'phone' => ['required', 'string', 'max:50'],
+            'city' => ['required', 'string', 'max:120'],
+            'address' => ['required', 'string', 'max:1000'],
+        ]);
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        $isFirstAddress = !$user->addresses()->exists();
+
+        $user->addresses()->create([
+            ...$data,
+            'is_default' => $isFirstAddress,
+        ]);
+
+        return redirect()->route('addresses')->with('success', 'Address added successfully.');
+    }
+
+    public function updateAddress(Request $request, Address $address)
+    {
+        abort_unless($address->user_id === Auth::id(), 403);
+
+        $data = $request->validate([
+            'full_name' => ['required', 'string', 'max:150'],
+            'email' => ['required', 'email', 'max:190'],
+            'phone' => ['required', 'string', 'max:50'],
+            'city' => ['required', 'string', 'max:120'],
+            'address' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $address->update($data);
+
+        return redirect()->route('addresses')->with('success', 'Address updated successfully.');
+    }
+
+    public function deleteAddress(Address $address)
+    {
+        abort_unless($address->user_id === Auth::id(), 403);
+
+        $wasDefault = (bool) $address->is_default;
+
+        $address->delete();
+
+        if ($wasDefault) {
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
+
+            $next = $user->addresses()->latest()->first();
+
+            if ($next) {
+                $next->update(['is_default' => true]);
+            }
+        }
+
+        return redirect()->route('addresses')->with('success', 'Address deleted successfully.');
+    }
+
+    public function setDefaultAddress(Address $address)
+    {
+        abort_unless($address->user_id === Auth::id(), 403);
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        $user->addresses()->update(['is_default' => false]);
+        $address->update(['is_default' => true]);
+
+        return redirect()->route('addresses')->with('success', 'Default address updated successfully.');
+    }
+
+    public function applyCoupon(Request $request)
+    {
+        $request->validate([
+            'code' => 'required|string|max:50'
+        ]);
+
+        $coupon = \App\Models\Coupon::where('code', $request->code)->first();
+
+        if (!$coupon || !$coupon->is_active) {
+            return back()->with('error', 'Invalid coupon.');
+        }
+
+        // Start date check
+        if ($coupon->starts_at && now()->lt($coupon->starts_at)) {
+            return back()->with('error', 'Coupon not started yet.');
+        }
+
+        // Expiry check
+        if ($coupon->ends_at && now()->gt($coupon->ends_at)) {
+            return back()->with('error', 'Coupon expired.');
+        }
+
+        // Usage limit check
+        if ($coupon->usage_limit !== null && $coupon->used_count >= $coupon->usage_limit) {
+            return back()->with('error', 'Coupon usage limit reached.');
+        }
+
+        $cart = $this->cart($request);
+
+        $products = Product::whereIn('id', array_keys($cart))
+            ->get()
+            ->keyBy('id');
+
+        $subtotal = collect($cart)->sum(function ($qty, $pid) use ($products) {
+            $p = $products->get((int)$pid);
+            return $p ? $p->price * $qty : 0;
+        });
+
+        if ($coupon->min_cart_total && $subtotal < $coupon->min_cart_total) {
+            return back()->with('error', 'Minimum order not reached for this coupon.');
+        }
+
+        // Save coupon in session
+        session(['coupon' => $coupon->code]);
+
+        return back()->with('success', 'Coupon applied successfully.');
+    }
+
+    private function calculateTotals($subtotal)
+    {
+        $taxPercent = (float) Setting::get('tax_percent', 5);
+
+        // SHIPPING
+        $shippingType = Setting::get('shipping_type', 'free');
+
+        if ($shippingType === 'free') {
+            $shipping = 0;
+        } elseif ($shippingType === 'flat') {
+            $shipping = (float) Setting::get('shipping_flat_rate', 0);
+        } elseif ($shippingType === 'conditional') {
+            $min = (float) Setting::get('free_shipping_min', 0);
+            $flat = (float) Setting::get('shipping_flat_rate', 0);
+            $shipping = $subtotal >= $min ? 0 : $flat;
+        } else {
+            $shipping = 0;
+        }
+
+        // COUPON
+        $discount = 0;
+
+        if (session('coupon')) {
+            $coupon = \App\Models\Coupon::where('code', session('coupon'))->first();
+
+            $valid = $coupon && $coupon->is_active;
+
+            if ($valid && $coupon->starts_at && now()->lt($coupon->starts_at)) $valid = false;
+            if ($valid && $coupon->ends_at && now()->gt($coupon->ends_at)) $valid = false;
+            if ($valid && $coupon->usage_limit !== null && $coupon->used_count >= $coupon->usage_limit) $valid = false;
+            if ($valid && $coupon->min_cart_total && $subtotal < $coupon->min_cart_total) $valid = false;
+
+            if ($valid) {
+                $discount = $coupon->type === 'fixed'
+                    ? $coupon->value
+                    : ($subtotal * $coupon->value) / 100;
+            } else {
+                session()->forget('coupon');
+            }
+        }
+
+        // Prevent over-discount
+        $discount = min($discount, $subtotal);
+
+        // Apply discount first
+        $taxable = max($subtotal - $discount, 0);
+
+        // TAX after discount
+        $tax = round(($taxable * $taxPercent) / 100, 2);
+
+        // FINAL TOTAL
+        $total = $taxable + $tax + $shipping;
+
+        return [
+            'tax' => $tax,
+            'shipping' => round($shipping, 2),
+            'discount' => round($discount, 2),
+            'total' => round($total, 2),
+        ];
     }
 }

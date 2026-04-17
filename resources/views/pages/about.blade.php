@@ -439,7 +439,7 @@
                         </div>
                         <div>
                             <h4 class="font-bold text-white mb-1">Flagship Showroom</h4>
-                            <p class="text-gray-400">Computer Plaza<br>Ground Floor, Shop G-12<br>Dubai, UAE</p>
+                            <p class="text-gray-400">Victoria building<br>international city 2<br>Dubai, UAE</p>
                         </div>
                     </div>
 
@@ -459,7 +459,7 @@
                         </div>
                         <div>
                             <h4 class="font-bold text-white mb-1">Instant Support</h4>
-                            <p class="text-gray-400">+971 50 123 4567<br>WhatsApp available 24/7</p>
+                            <p class="text-gray-400">+971 50 124 0180<br>WhatsApp available 24/7</p>
                         </div>
                     </div>
                 </div>

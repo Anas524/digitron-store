@@ -1489,19 +1489,19 @@ main,
   pointer-events: auto;
 }
 
-/* Stage becomes full screen */
+/* Stage needs flex so slides can stretch to full height */
 .catHeroFullInner .catHeroStage {
-  width: 100%;
-  height: 100vh;
-  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+}
 
-  border: none !important;
-  /* remove border */
-  border-radius: 0 !important;
-  /* remove rounded corners */
-  background: transparent !important;
-  /* background handled by slide bg */
-  overflow: hidden;
+/* Each slide fills the stage and centers content */
+.catHeroFullInner .catSlide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;   /* vertical center */
 }
 
 /* Make slide bg cover full */
@@ -1510,18 +1510,33 @@ main,
   inset: 0;
 }
 
-/* Keep content centered with max width inside full screen */
+/* Keep a modest top offset so it clears the overlay heading */
 .catHeroFullInner .catSlideInner {
   max-width: 1280px;
   margin: 0 auto;
-  height: 100%;
-  padding-top: 140px;
+  width: 100%;
+  height: auto;           /* don't force 100% height anymore */
+  padding-top: 80px;      /* enough to clear the "UPGRADE PATHS" overlay header */
+  padding-bottom: 80px;   /* equal bottom breathing room */
+  padding-left: 20px;
+  padding-right: 20px;
+  align-items: center;    /* vertically align grid children */
 }
 
 @media (min-width: 1024px) {
   .catHeroFullInner .catSlideInner {
-    padding-top: 160px;
+    padding-top: 100px;
+    padding-bottom: 100px;
+    padding-left: 56px;
+    padding-right: 56px;
   }
+}
+
+/* Make sure the catArt image side also centers vertically */
+.catHeroFullInner .catArt {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 /* Move nav buttons to look like hero */
@@ -2316,7 +2331,7 @@ button.mobile-link{
   position: absolute;
   right: 0;
   bottom: 70px;
-  width: 360px;
+  width: 390px;
   max-width: calc(100vw - 24px);
   height: 520px;
   max-height: min(72vh, 520px);
@@ -2385,7 +2400,7 @@ button.mobile-link{
 }
 
 .dc-chatbot-body{
-  height: calc(100% - 126px);
+  height: calc(100% - 78px - 84px);
   overflow-y: auto;
   padding: 14px;
   display: flex;
@@ -2448,24 +2463,33 @@ button.mobile-link{
 }
 
 .dc-chatbot-foot{
-  height: 70px;
-  padding: 12px;
+  min-height: 84px;
+  padding: 10px 12px;
   border-top: 1px solid rgba(255,255,255,.08);
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 10px;
   background: rgba(255,255,255,.03);
 }
 
 .dc-chatbot-input{
-  flex: 1;
-  height: 46px;
-  border-radius: 14px;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  height: 58px;
+  min-height: 58px;
+  max-height: 58px;
+  border-radius: 16px;
   border: 1px solid rgba(255,255,255,.10);
   background: rgba(255,255,255,.05);
   color: #fff;
-  padding: 0 14px;
+  padding: 14px 16px;
   outline: none;
+  font-size: 14px;
+  line-height: 1.35;
+  resize: none;
+  overflow-y: auto;
+  display: block;
 }
 
 .dc-chatbot-input::placeholder{
@@ -2477,9 +2501,10 @@ button.mobile-link{
 }
 
 .dc-chatbot-send{
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
+  width: 58px;
+  height: 58px;
+  flex: 0 0 58px;
+  border-radius: 16px;
   border: 1px solid rgba(255,255,255,.10);
   background: linear-gradient(135deg, #25D366, #128C7E);
   color: #fff;
@@ -2498,6 +2523,15 @@ button.mobile-link{
   vertical-align: middle;
 }
 
+.dc-chatbot-input::-webkit-scrollbar{
+  width: 6px;
+}
+
+.dc-chatbot-input::-webkit-scrollbar-thumb{
+  background: rgba(255,255,255,.18);
+  border-radius: 999px;
+}
+
 @media (max-width: 767px){
   .dc-chatbot{
     right: 14px;
@@ -2507,7 +2541,7 @@ button.mobile-link{
   .dc-chatbot-panel{
     right: 0;
     bottom: 66px;
-    width: min(360px, calc(100vw - 20px));
+    width: min(390px, calc(100vw - 20px));
     height: 68vh;
   }
 
@@ -2739,8 +2773,18 @@ button.mobile-link{
     overflow: hidden;
     isolation: isolate;
     box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.6);
-    opacity: 1;
-    visibility: visible;
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: translateY(0) !important; /* prevent GSAP stale state */
+    will-change: transform;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.3s ease,
+                border-color 0.3s ease;
+}
+
+.dc-promo-card:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 24px 50px -16px rgba(0, 0, 0, 0.7);
 }
 
 .dc-promo-card::before {
@@ -2749,8 +2793,10 @@ button.mobile-link{
     inset: 0;
     background: linear-gradient(135deg, transparent 40%, rgba(255, 255, 255, 0.05) 50%, transparent 60%);
     transform: translateX(-100%);
-    transition: transform 0.6s;
+    transition: transform 0.6s ease;
     z-index: 0;
+    will-change: transform; /* isolate shimmer layer */
+    pointer-events: none;
 }
 
 .dc-promo-card:hover::before {

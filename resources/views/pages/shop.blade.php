@@ -216,28 +216,51 @@
 </section>
 
 {{-- Recently Viewed Section --}}
+@php
+    // ensure variable exists
+    $recentProducts = $recentProducts ?? collect();
+
+    // fallback if empty
+    if ($recentProducts->isEmpty()) {
+        $recentProducts = \App\Models\Product::with(['images' => fn($q) => $q->orderByDesc('is_primary')->orderBy('sort_order')])
+            ->latest()
+            ->take(4)
+            ->get();
+    }
+@endphp
+
 <section class="py-16 border-t border-white/10">
     <div class="flex items-center justify-between mb-8">
-        <h2 class="text-2xl font-display font-bold">Recently Viewed</h2>
-        <a href="#" class="text-sm text-brand-accent hover:text-white transition-colors">View All</a>
+        <h2 class="text-2xl font-display font-bold">
+            {{ count(session('recently_viewed', [])) > 1 ? 'Recently Viewed' : 'You May Like' }}
+        </h2>
     </div>
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        @php
-        $recent = $products->take(4); // takes first 4 from current page
-        @endphp
 
-        @foreach($recent as $p)
-        <a href="{{ route('product.show', ['slug' => $p->slug]) }}"
-            class="group rounded-xl border border-white/5 bg-white/[0.02] p-3 hover:border-white/20 transition-colors">
-            <div class="aspect-square rounded-lg bg-white/5 mb-3 overflow-hidden">
-                <img src="{{ $p->primary_image_url }}"
-                    class="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity">
-            </div>
-            <div class="text-xs text-gray-400 mb-1">{{ ucfirst($p->condition ?? 'New') }}</div>
-            <div class="text-sm font-medium text-white truncate">{{ $p->name }}</div>
-            <div class="text-sm font-bold text-brand-accent mt-1">AED {{ number_format($p->price, 0) }}</div>
-        </a>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        @foreach($recentProducts as $p)
+            <a href="{{ route('product.show', $p->slug) }}"
+               class="group rounded-xl border border-white/5 bg-white/[0.02] p-3 hover:border-white/20 transition-colors">
+
+                <div class="aspect-square rounded-lg bg-white/5 mb-3 overflow-hidden">
+                    <img src="{{ $p->primary_image_url }}"
+                         class="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity">
+                </div>
+
+                <div class="text-xs text-gray-400 mb-1">
+                    {{ ucfirst($p->condition ?? 'New') }}
+                </div>
+
+                <div class="text-sm font-medium text-white truncate">
+                    {{ $p->name }}
+                </div>
+
+                <div class="text-sm font-bold text-brand-accent mt-1">
+                    AED {{ number_format($p->price, 0) }}
+                </div>
+
+            </a>
         @endforeach
     </div>
 </section>
+
 @endsection

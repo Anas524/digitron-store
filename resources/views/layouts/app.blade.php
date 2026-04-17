@@ -89,6 +89,42 @@
 
   @php
   $whatsAppNumber = '971501234567'; // replace with real number
+
+  $defaultWaMessage = 'Hello Digitron Computers UAE, I need support.';
+  $waChips = [
+  ['label' => 'Delivery', 'question' => 'Do you offer delivery in UAE?'],
+  ['label' => 'Warranty', 'question' => 'What warranty do you provide?'],
+  ['label' => 'Custom PC', 'question' => 'Can you build a custom gaming PC?'],
+  ['label' => 'Payment', 'question' => 'What payment methods do you accept?'],
+  ['label' => 'Location', 'question' => 'Where is your store located?'],
+  ['label' => 'Stock', 'question' => 'Do you have stock available?'],
+  ];
+
+  if (View::hasSection('whatsapp_message')) {
+  $defaultWaMessage = trim($__env->yieldContent('whatsapp_message'));
+  }
+
+  $isProductPage = View::hasSection('page') && trim($__env->yieldContent('page')) === 'product';
+
+  if ($isProductPage) {
+  $waChips = [
+  ['label' => 'Price', 'question' => 'Please share the final price for this product.'],
+  ['label' => 'Stock', 'question' => 'Is this product currently in stock?'],
+  ['label' => 'Delivery', 'question' => 'How fast can you deliver this product in UAE?'],
+  ['label' => 'Warranty', 'question' => 'What warranty is available for this product?'],
+  ['label' => 'Availability', 'question' => 'Please confirm availability for this product.'],
+  ['label' => 'WhatsApp', 'question' => '__OPEN_WHATSAPP__'],
+  ];
+  }
+
+  $productName = $product->name ?? '';
+  $productSku = $product->sku ?? '';
+  $productPrice = isset($product->price) ? number_format((float) $product->price, 2) : '';
+  $productWarranty = $product->warranty ?? '';
+  $productDelivery = $product->delivery_text ?? '';
+  $productStockText = isset($product->stock_qty)
+  ? ($product->stock_qty > 0 ? 'In stock' : 'Out of stock')
+  : '';
   @endphp
 
   @include('partials.footer')
@@ -99,8 +135,17 @@
   <div
     class="dc-chatbot"
     data-wa-number="{{ $whatsAppNumber }}"
-    data-wa-default="Hello Digitron Computers UAE, I need support.">
-    {{-- Floating Button --}}
+    data-wa-default="{{ $defaultWaMessage }}"
+    data-page-type="{{ $isProductPage ? 'product' : 'general' }}"
+    data-product-id="{{ $product->id ?? '' }}"
+    data-product-name="{{ $productName }}"
+    data-product-sku="{{ $productSku }}"
+    data-product-price="{{ $productPrice }}"
+    data-product-stock="{{ $productStockText }}"
+    data-product-warranty="{{ $productWarranty }}"
+    data-product-delivery="{{ $productDelivery }}"
+    data-lead-url="{{ route('chatbot-leads.store') }}"
+    data-csrf="{{ csrf_token() }}">
     <button
       type="button"
       class="dc-whatsapp-float dc-chatbot-toggle"
@@ -108,7 +153,6 @@
       <i class="bi bi-whatsapp"></i>
     </button>
 
-    {{-- Chat Panel --}}
     <div class="dc-chatbot-panel hidden" id="dcChatbotPanel">
       <div class="dc-chatbot-head">
         <div class="dc-chatbot-head-left">
@@ -134,23 +178,33 @@
           </div>
         </div>
 
+        @if($isProductPage)
+        <div class="dc-chat-msg dc-chat-msg-bot">
+          <div class="dc-chat-bubble">
+            I can help with quick answers for this product like price, stock, delivery, warranty, and availability.
+          </div>
+        </div>
+        @endif
+
         <div class="dc-chat-quick">
-          <button type="button" class="dc-chat-chip" data-question="Do you offer delivery in UAE?">Delivery</button>
-          <button type="button" class="dc-chat-chip" data-question="What warranty do you provide?">Warranty</button>
-          <button type="button" class="dc-chat-chip" data-question="Can you build a custom gaming PC?">Custom PC</button>
-          <button type="button" class="dc-chat-chip" data-question="What payment methods do you accept?">Payment</button>
-          <button type="button" class="dc-chat-chip" data-question="Where is your store located?">Location</button>
-          <button type="button" class="dc-chat-chip" data-question="Do you have stock available?">Stock</button>
+          @foreach($waChips as $chip)
+          <button
+            type="button"
+            class="dc-chat-chip"
+            data-question="{{ $chip['question'] }}">
+            {{ $chip['label'] }}
+          </button>
+          @endforeach
         </div>
       </div>
 
       <form class="dc-chatbot-foot" id="dcChatbotForm">
-        <input
-          type="text"
+        <textarea
           id="dcChatbotInput"
           class="dc-chatbot-input"
           placeholder="Type your question..."
-          autocomplete="off">
+          rows="1"></textarea>
+
         <button type="submit" class="dc-chatbot-send" aria-label="Send">
           <i class="bi bi-send-fill"></i>
         </button>

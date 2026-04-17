@@ -2995,39 +2995,109 @@ $(function () {
 
     const waNumber = String($root.data('wa-number') || '').trim();
     const defaultMessage = String($root.data('wa-default') || 'Hello, I need support.').trim();
+    const pageType = String($root.data('page-type') || 'general').trim();
+
+    const leadUrl = String($root.data('lead-url') || '').trim();
+    const csrfToken = String($root.data('csrf') || '').trim();
+
+    function saveLead(payload = {}) {
+      if (!leadUrl) return Promise.resolve();
+
+      return fetch(leadUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+          product_id: product.id || null,
+          product_name: product.name || '',
+          product_sku: product.sku || '',
+          message: payload.message || '',
+          source_type: payload.source_type || '',
+          button_label: payload.button_label || '',
+          page_type: pageType || ''
+        })
+      }).catch(() => null);
+    }
+
+    const product = {
+      id: String($root.data('product-id') || '').trim(),
+      name: String($root.data('product-name') || '').trim(),
+      sku: String($root.data('product-sku') || '').trim(),
+      price: String($root.data('product-price') || '').trim(),
+      stock: String($root.data('product-stock') || '').trim(),
+      warranty: String($root.data('product-warranty') || '').trim(),
+      delivery: String($root.data('product-delivery') || '').trim()
+    };
 
     const faq = [
       {
         keywords: ['delivery', 'shipping', 'dispatch'],
-        answer: 'We deliver across the UAE. Delivery timing depends on product availability and your location.'
+        answer: function () {
+          if (pageType === 'product' && product.delivery) {
+            return `Delivery for ${escapeHtml(product.name || 'this product')}: ${escapeHtml(product.delivery)}`;
+          }
+          return 'We deliver across the UAE. Delivery timing depends on product availability and your location.';
+        }
       },
       {
         keywords: ['warranty', 'guarantee'],
-        answer: 'Warranty depends on the product. Most items include warranty support. You can also ask us on WhatsApp for exact product warranty details.'
+        answer: function () {
+          if (pageType === 'product' && product.warranty) {
+            return `Warranty for ${escapeHtml(product.name || 'this product')}: ${escapeHtml(product.warranty)}`;
+          }
+          return 'Warranty depends on the product. Most items include warranty support. You can also ask us on WhatsApp for exact product warranty details.';
+        }
       },
       {
         keywords: ['payment', 'cash', 'card', 'tabby', 'tamara'],
-        answer: 'We support standard payment options. For installment services like Tabby or Tamara, please confirm availability with our support team.'
+        answer: function () {
+          return 'We support standard payment options. For installment services like Tabby or Tamara, please confirm availability with our support team.';
+        }
       },
       {
         keywords: ['location', 'store', 'shop', 'address'],
-        answer: 'You can contact our support team for exact store location and directions. We will gladly guide you.'
+        answer: function () {
+          return 'You can contact our support team for exact store location and directions. We will gladly guide you.';
+        }
       },
       {
-        keywords: ['stock', 'available', 'availability'],
-        answer: 'Stock changes frequently. Please share the product name and we will confirm the latest availability for you.'
+        keywords: ['stock', 'available', 'availability', 'in stock'],
+        answer: function () {
+          if (pageType === 'product' && product.stock) {
+            return `${escapeHtml(product.name || 'This product')} is currently marked as: <strong>${escapeHtml(product.stock)}</strong>.`;
+          }
+          return 'Stock changes frequently. Please share the product name and we will confirm the latest availability for you.';
+        }
+      },
+      {
+        keywords: ['price', 'final price', 'cost'],
+        answer: function () {
+          if (pageType === 'product' && product.price) {
+            return `The listed price for ${escapeHtml(product.name || 'this product')} is <strong>AED ${escapeHtml(product.price)}</strong>. Final confirmation can continue on WhatsApp if needed.`;
+          }
+          return 'Please share the product name so we can confirm the latest price for you.';
+        }
       },
       {
         keywords: ['custom pc', 'gaming pc', 'workstation', 'build pc', 'custom build'],
-        answer: 'Yes, we can help with custom gaming PCs, workstation builds, upgrades, and performance recommendations.'
+        answer: function () {
+          return 'Yes, we can help with custom gaming PCs, workstation builds, upgrades, and performance recommendations.';
+        }
       },
       {
         keywords: ['repair', 'fix', 'service'],
-        answer: 'Yes, please tell us what issue you are facing, and our team will guide you on the next step.'
+        answer: function () {
+          return 'Yes, please tell us what issue you are facing, and our team will guide you on the next step.';
+        }
       },
       {
         keywords: ['return', 'refund'],
-        answer: 'Return and refund eligibility depends on the product and its condition. Please contact support with your order details.'
+        answer: function () {
+          return 'Return and refund eligibility depends on the product and its condition. Please contact support with your order details.';
+        }
       }
     ];
 
@@ -3072,50 +3142,153 @@ $(function () {
       window.open(url, '_blank');
     }
 
+    function prefillInput(force = false) {
+      if (!$input.length) return;
+
+      const current = String($input.val() || '').trim();
+      if (force || !current) {
+        $input.val(defaultMessage);
+      }
+    }
+
+    function normalizeText(text) {
+      return String(text || '')
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function isExactDefaultMessage(message) {
+      return normalizeText(message) === normalizeText(defaultMessage);
+    }
+
+    function looksEditedFromDefault(message) {
+      const clean = normalizeText(message);
+      const base = normalizeText(defaultMessage);
+
+      if (!clean || !base) return false;
+      if (clean === base) return false;
+
+      return clean.includes(base) || base.includes(clean);
+    }
+
+    function getProductIntroReply() {
+      const parts = [];
+
+      if (product.name) {
+        parts.push(`<strong>${escapeHtml(product.name)}</strong>`);
+      }
+
+      if (product.sku) {
+        parts.push(`SKU: ${escapeHtml(product.sku)}`);
+      }
+
+      if (product.price) {
+        parts.push(`Price: AED ${escapeHtml(product.price)}`);
+      }
+
+      if (product.stock) {
+        parts.push(`Availability: ${escapeHtml(product.stock)}`);
+      }
+
+      if (parts.length) {
+        return `Here are the quick details for this product:<br>${parts.join('<br>')}<br><br>You can also ask me about warranty, delivery, or click WhatsApp for a custom request.`;
+      }
+
+      return 'I can help with quick answers for this product like price, stock, delivery, warranty, and availability. For custom requests, continue on WhatsApp.';
+    }
+
     function findFaqAnswer(message) {
-      const q = String(message || '').toLowerCase().trim();
+      const q = normalizeText(message);
       if (!q) return null;
 
       for (const item of faq) {
         if (item.keywords.some(k => q.includes(k))) {
-          return item.answer;
+          return typeof item.answer === 'function' ? item.answer() : item.answer;
         }
       }
 
       return null;
     }
 
-    function handleQuestion(message) {
+    function handleQuestion(message, options = {}) {
       const clean = String(message || '').trim();
       if (!clean) return;
 
-      addUserMessage(clean);
+      const fromChip = options.fromChip === true;
 
-      const answer = findFaqAnswer(clean);
+      if (!fromChip) {
+        addUserMessage(clean);
+      }
 
-      if (answer) {
+      if (clean === '__OPEN_WHATSAPP__') {
         setTimeout(() => {
-          addBotMessage(answer);
-        }, 350);
+          addBotMessage('Opening WhatsApp for direct support.');
+          openWhatsApp(defaultMessage);
+        }, 250);
         return;
       }
 
-      setTimeout(() => {
-        addBotMessage('This looks like a specific request. I’m opening WhatsApp so you can continue with our support team.');
+      if (pageType === 'product' && isExactDefaultMessage(clean)) {
+        saveLead({
+          message: clean,
+          source_type: 'default_message'
+        });
+
         setTimeout(() => {
-          addBotMessage(`
-            <a href="https://wa.me/${waNumber}?text=${encodeURIComponent(clean)}" target="_blank" class="underline text-[#25D366] font-bold">
-              Continue on WhatsApp
-            </a>
-          `);
-        }, 700);
-      }, 350);
+          addBotMessage(getProductIntroReply());
+        }, 300);
+        return;
+      }
+
+      const answer = findFaqAnswer(clean);
+      if (answer) {
+        setTimeout(() => {
+          addBotMessage(answer);
+        }, 300);
+        return;
+      }
+
+      if (pageType === 'product' && looksEditedFromDefault(clean)) {
+        saveLead({
+          message: clean,
+          source_type: 'custom_message'
+        });
+
+        setTimeout(() => {
+          addBotMessage('This looks like a custom or specific request. Please continue on WhatsApp for direct support.');
+          setTimeout(() => {
+            openWhatsApp(clean);
+          }, 5000);
+        }, 250);
+        return;
+      }
+
+      saveLead({
+        message: clean,
+        source_type: 'custom_message'
+      });
+
+      setTimeout(() => {
+        addBotMessage('This looks like a custom or specific request. Please continue on WhatsApp for direct support.');
+        setTimeout(() => {
+          openWhatsApp(clean);
+        }, 5000);
+      }, 250);
     }
 
     $toggle.on('click', function () {
       $panel.toggleClass('hidden');
+
       if (!$panel.hasClass('hidden')) {
+        prefillInput(false);
         $input.trigger('focus');
+
+        const val = String($input.val() || '');
+        if ($input.length && $input[0].setSelectionRange) {
+          $input[0].setSelectionRange(val.length, val.length);
+        }
+
         scrollToBottom();
       }
     });
@@ -3131,14 +3304,33 @@ $(function () {
     });
 
     $(document).on('click', '.dc-chat-chip', function () {
-      const q = $(this).data('question');
-      handleQuestion(q);
+      const q = String($(this).data('question') || '').trim();
+      const label = String($(this).text() || '').trim();
+
+      if (!q) return;
+
+      if (q === '__OPEN_WHATSAPP__') {
+        addBotMessage('Opening WhatsApp for direct support.');
+        setTimeout(() => {
+          openWhatsApp(defaultMessage);
+        }, 300);
+        return;
+      }
+
+      saveLead({
+        message: q,
+        source_type: 'quick_button',
+        button_label: label
+      });
+
+      handleQuestion(q, { fromChip: true });
     });
 
     $form.on('submit', function (e) {
       e.preventDefault();
-      const message = $input.val();
-      if (!String(message || '').trim()) return;
+
+      const message = String($input.val() || '').trim();
+      if (!message) return;
 
       handleQuestion(message);
       $input.val('');
@@ -3386,7 +3578,15 @@ $(function () {
         duration: 0.65,
         stagger: 0.12,
         ease: 'power3.out',
-        clearProps: 'all'
+        onComplete: function () {
+          // Force-clear ALL inline styles GSAP set so CSS hover takes full control
+          promoCards.forEach(function (card) {
+            card.style.removeProperty('transform');
+            card.style.removeProperty('opacity');
+            card.style.removeProperty('x');
+            card.style.removeProperty('will-change');
+          });
+        }
       });
     }
   }

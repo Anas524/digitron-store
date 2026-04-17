@@ -68,7 +68,7 @@ $wishlistCount = (int)($wishlistCount ?? 0);
                 </div>
 
                 <div class="dc-account-links">
-                    <a href="/account" class="dc-linkrow">
+                    <a href="{{ route('account') }}" class="dc-linkrow">
                         <i class="bi bi-person"></i>
                         <span>Profile</span>
                         <i class="bi bi-chevron-right"></i>
@@ -80,7 +80,7 @@ $wishlistCount = (int)($wishlistCount ?? 0);
                         <i class="bi bi-chevron-right"></i>
                     </a>
 
-                    <a href="/addresses" class="dc-linkrow">
+                    <a href="{{ route('addresses') }}" class="dc-linkrow">
                         <i class="bi bi-geo-alt"></i>
                         <span>Delivery Address</span>
                         <i class="bi bi-chevron-right"></i>

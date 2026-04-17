@@ -83,23 +83,23 @@
 
                     <!-- Contact Info -->
                     <div class="space-y-3">
-                        <a href="https://wa.me/971501234567" class="flex items-center gap-3 text-gray-400 hover:text-emerald-400 transition-colors group">
+                        <a href="https://wa.me/971501240180" class="flex items-center gap-3 text-gray-400 hover:text-emerald-400 transition-colors group">
                             <div class="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-emerald-500/10 transition-colors">
                                 <i class="bi bi-whatsapp text-lg"></i>
                             </div>
                             <div>
                                 <div class="text-xs text-gray-500">WhatsApp</div>
-                                <div class="text-sm font-medium">+971 50 123 4567</div>
+                                <div class="text-sm font-medium">+971 50 124 0180</div>
                             </div>
                         </a>
 
-                        <a href="tel:+97141234567" class="flex items-center gap-3 text-gray-400 hover:text-brand-accent transition-colors group">
+                        <a href="tel:+971501240180" class="flex items-center gap-3 text-gray-400 hover:text-brand-accent transition-colors group">
                             <div class="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-brand-accent/10 transition-colors">
                                 <i class="bi bi-telephone text-lg"></i>
                             </div>
                             <div>
                                 <div class="text-xs text-gray-500">Phone</div>
-                                <div class="text-sm font-medium">+971 4 123 4567</div>
+                                <div class="text-sm font-medium">+971 50 124 0180</div>
                             </div>
                         </a>
 
@@ -109,7 +109,7 @@
                             </div>
                             <div>
                                 <div class="text-xs text-gray-500">Showroom</div>
-                                <div class="text-sm font-medium">Al Ain Centre, Dubai</div>
+                                <div class="text-sm font-medium">Victoria building, international city 2, Dubai, UAE</div>
                             </div>
                         </div>
                     </div>

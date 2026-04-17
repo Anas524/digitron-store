@@ -2,6 +2,8 @@
 
 @section('page','product')
 
+@section('whatsapp_message', 'Hello Digitron Computers UAE, I am interested in ' . $product->name . ' (SKU: ' . ($product->sku ?? 'N/A') . '). Please share availability and final price.')
+
 @section('fullwidth')
 
 @php

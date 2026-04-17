@@ -1,6 +1,9 @@
 
 
 <?php $__env->startSection('title', 'Checkout | Digitron Computers UAE'); ?>
+
+<?php $__env->startSection('whatsapp_message', 'Hello Digitron Computers UAE, I need help with my checkout and order process.'); ?>
+
 <?php $__env->startSection('page', 'checkout'); ?>
 
 <?php $__env->startSection('fullwidth'); ?>
@@ -69,23 +72,23 @@
                     <?php endif; ?>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input name="full_name" type="text" value="<?php echo e(old('full_name', auth()->user()->name)); ?>" placeholder="Full Name"
+                        <input name="full_name" type="text" value="<?php echo e(old('full_name', $defaultAddress->full_name ?? auth()->user()->name)); ?>" placeholder="Full Name"
                             class="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-brand-accent">
 
-                        <input name="email" type="email" value="<?php echo e(old('email', auth()->user()->email)); ?>" placeholder="Email Address"
+                        <input name="email" type="email" value="<?php echo e(old('email', $defaultAddress->email ?? auth()->user()->email)); ?>" placeholder="Email Address"
                             class="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-brand-accent">
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                        <input name="phone" type="text" value="<?php echo e(old('phone')); ?>" placeholder="Phone Number"
+                        <input name="phone" type="text" value="<?php echo e(old('phone', $defaultAddress->phone ?? '')); ?>" placeholder="Phone Number"
                             class="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-brand-accent">
 
-                        <input name="city" type="text" value="<?php echo e(old('city')); ?>" placeholder="City"
+                        <input name="city" type="text" value="<?php echo e(old('city', $defaultAddress->city ?? '')); ?>" placeholder="City"
                             class="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-brand-accent">
                     </div>
 
                     <textarea name="address" placeholder="Full Delivery Address" rows="4"
-                        class="w-full mt-4 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-brand-accent"><?php echo e(old('address')); ?></textarea>
+                        class="w-full mt-4 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-brand-accent"><?php echo e(old('address', $defaultAddress->address ?? '')); ?></textarea>
                 </div>
 
                 <div class="glass-panel rounded-2xl p-6 border border-white/10">

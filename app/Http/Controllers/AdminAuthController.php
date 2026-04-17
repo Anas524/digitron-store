@@ -4,17 +4,11 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 
 class AdminAuthController extends Controller
 {
-    public function showLogin()
-    {
-        if (Auth::check() && Auth::user()->is_admin) {
-            return redirect()->route('admin.dashboard');
-        }
-        return view('admin.login');
-    }
-
     public function login(Request $request)
     {
         $credentials = $request->validate([
@@ -22,18 +16,28 @@ class AdminAuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (!Auth::attempt($credentials, $request->boolean('remember'))) {
-            return back()->withErrors(['email' => 'Invalid email or password'])->onlyInput('email');
+        $key = Str::lower($request->input('email')) . '|' . $request->ip();
+
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            return back()->withErrors([
+                'email' => 'Too many login attempts. Try again later.'
+            ]);
         }
+
+        // Add admin check here directly
+        $credentials['is_admin'] = 1;
+
+        if (!Auth::attempt($credentials, $request->boolean('remember'))) {
+            RateLimiter::hit($key, 60);
+
+            return back()->withErrors([
+                'email' => 'Invalid credentials or not authorized.'
+            ])->onlyInput('email');
+        }
+
+        RateLimiter::clear($key);
 
         $request->session()->regenerate();
-
-        if (!Auth::user()->is_admin) {
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-            return back()->withErrors(['email' => 'Not allowed. Admin only.'])->onlyInput('email');
-        }
 
         return redirect()->intended(route('admin.dashboard'));
     }

@@ -89,45 +89,48 @@
                                 </div>
                             </div>
 
-                            <a href="{{ route('admin.quotes.index') }}" class="text-xs text-admin-primary hover:underline whitespace-nowrap shrink-0">
+                            <a href="{{ route('admin.chatbot-leads.index') }}" class="text-xs text-admin-primary hover:underline whitespace-nowrap shrink-0">
                                 View All
                             </a>
                         </div>
 
                         <div class="max-h-96 overflow-y-auto custom-scrollbar">
                             @forelse(($notifications ?? []) as $note)
-                            @if($note['type'] === 'quote')
-                            <a href="{{ route('admin.quotes.index') }}"
-                                class="notification-item block px-4 py-3 border-b border-white/5 hover:bg-white/5 transition"
-                                data-quote-id="{{ $note['id'] }}">
-                                @else
-                                <a href="{{ route('admin.newsletter.index') }}"
-                                    class="block px-4 py-3 border-b border-white/5 hover:bg-white/5 transition">
-                                    @endif
-                                    <div class="flex items-start gap-3 min-w-0">
-                                        <div class="w-10 h-10 rounded-xl bg-{{ $note['color'] }}/10 text-{{ $note['color'] }} flex items-center justify-center shrink-0">
-                                            <i class="bi bi-{{ $note['icon'] }}"></i>
-                                        </div>
+                            @php
+                            $noteUrl = match($note['type']) {
+                            'quote' => route('admin.quotes.index'),
+                            'newsletter' => route('admin.newsletter.index'),
+                            'chatbot_lead' => route('admin.chatbot-leads.index'),
+                            default => route('admin.dashboard'),
+                            };
+                            @endphp
 
-                                        <div class="flex-1 min-w-0">
-                                            <div class="text-sm font-semibold text-white truncate">
-                                                {{ $note['title'] }}
-                                            </div>
-                                            <div class="text-xs text-gray-400 truncate">
-                                                {{ $note['subtitle'] }}
-                                            </div>
-                                        </div>
+                            <a href="{{ $noteUrl }}"
+                                class="block px-4 py-3 border-b border-white/5 hover:bg-white/5 transition">
+                                <div class="flex items-start gap-3 min-w-0">
+                                    <div class="w-10 h-10 rounded-xl bg-{{ $note['color'] }}/10 text-{{ $note['color'] }} flex items-center justify-center shrink-0">
+                                        <i class="bi bi-{{ $note['icon'] }}"></i>
+                                    </div>
 
-                                        <div class="text-[11px] text-gray-500 shrink-0">
-                                            {{ $note['time'] }}
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-semibold text-white truncate">
+                                            {{ $note['title'] }}
+                                        </div>
+                                        <div class="text-xs text-gray-400 truncate">
+                                            {{ $note['subtitle'] }}
                                         </div>
                                     </div>
-                                </a>
-                                @empty
-                                <div class="px-4 py-8 text-center text-sm text-gray-500">
-                                    No new notifications
+
+                                    <div class="text-[11px] text-gray-500 shrink-0">
+                                        {{ $note['time'] }}
+                                    </div>
                                 </div>
-                                @endforelse
+                            </a>
+                            @empty
+                            <div class="px-4 py-8 text-center text-sm text-gray-500">
+                                No new notifications
+                            </div>
+                            @endforelse
                         </div>
                     </div>
                 </div>

@@ -75,7 +75,7 @@
                 <span>Categories</span>
                 <span class="ml-auto text-xs bg-white/10 px-2 py-0.5 rounded-full">{{ $sidebarCounts['categories'] ?? 0 }}</span>
             </a>
-            
+
             <a href="{{ route('admin.products.index') }}"
                 class="sidebar-link {{ request()->routeIs('admin.products.*') ? 'active text-white bg-white/10' : 'text-gray-400 hover:text-white hover:bg-white/5' }} flex items-center gap-3 px-4 py-3 rounded-xl transition-all group"
                 @click="if (window.innerWidth < 1024) sidebarOpen = false">
@@ -126,6 +126,18 @@
                 <span class="ml-auto text-xs bg-admin-primary/20 text-admin-primary px-2 py-0.5 rounded-full">{{ $sidebarCounts['home_showcase'] ?? 0 }}</span>
             </a>
 
+            <a href="{{ route('admin.chatbot-leads.index') }}"
+                class="sidebar-link {{ request()->routeIs('admin.chatbot-leads.*') ? 'active text-white bg-white/10' : 'text-gray-400 hover:text-white hover:bg-white/5' }} flex items-center gap-3 px-4 py-3 rounded-xl transition-all group"
+                @click="if (window.innerWidth < 1024) sidebarOpen = false">
+                <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-admin-primary/20 group-hover:text-admin-primary transition-colors">
+                    <i class="bi bi-chat-dots-fill"></i>
+                </div>
+                <span>Chatbot Leads</span>
+                <span class="ml-auto text-xs bg-admin-warning/20 text-admin-warning px-2 py-0.5 rounded-full">
+                    {{ $sidebarCounts['chatbot_leads'] ?? 0 }}
+                </span>
+            </a>
+
             <div class="text-[10px] uppercase tracking-wider text-gray-500 mb-3 mt-6 px-2">Pages</div>
 
             <a href="{{ route('home') }}"
@@ -144,6 +156,19 @@
                     <i class="bi bi-basket3"></i>
                 </div>
                 <span>Shop</span>
+            </a>
+
+            <div class="text-[10px] uppercase tracking-wider text-gray-500 mb-3 mt-6 px-2">Settings</div>
+
+            <a href="{{ route('admin.settings') }}"
+                class="sidebar-link {{ request()->routeIs('admin.settings') ? 'active text-white bg-white/10' : 'text-gray-400 hover:text-white hover:bg-white/5' }} flex items-center gap-3 px-4 py-3 rounded-xl transition-all group"
+                @click="if (window.innerWidth < 1024) sidebarOpen = false">
+
+                <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-admin-primary/20 group-hover:text-admin-primary transition-colors">
+                    <i class="bi bi-gear-fill"></i>
+                </div>
+
+                <span>Settings</span>
             </a>
         </nav>
 

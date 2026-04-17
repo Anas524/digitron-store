@@ -53,11 +53,11 @@
 
     <!-- Quick Contact Options -->
     <div class="flex flex-wrap items-center justify-center gap-4 mb-12">
-      <a href="https://wa.me/971501234567" target="_blank" class="group px-6 py-3 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-medium hover:bg-emerald-500 hover:text-white transition-all flex items-center gap-2">
+      <a href="https://wa.me/971501240180" target="_blank" class="group px-6 py-3 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-medium hover:bg-emerald-500 hover:text-white transition-all flex items-center gap-2">
         <i class="bi bi-whatsapp text-xl group-hover:scale-110 transition-transform"></i>
         WhatsApp Now
       </a>
-      <a href="tel:+971501234567" class="group px-6 py-3 rounded-full bg-white/5 border border-white/20 text-white font-medium hover:bg-brand-accent hover:text-black hover:border-brand-accent transition-all flex items-center gap-2">
+      <a href="tel:+971501240180" class="group px-6 py-3 rounded-full bg-white/5 border border-white/20 text-white font-medium hover:bg-brand-accent hover:text-black hover:border-brand-accent transition-all flex items-center gap-2">
         <i class="bi bi-telephone-fill group-hover:rotate-12 transition-transform"></i>
         Call Us
       </a>
@@ -92,10 +92,10 @@
       [
       'icon' => 'whatsapp',
       'title' => 'WhatsApp',
-      'value' => '+971 50 123 4567',
+      'value' => '+971 50 124 0180',
       'desc' => 'Fastest response time',
       'action' => 'Chat Now',
-      'link' => 'https://wa.me/971501234567',
+      'link' => 'https://wa.me/971501240180',
 
       // static Tailwind classes
       'hoverBorder' => 'hover:border-emerald-400/50',
@@ -109,10 +109,10 @@
       [
       'icon' => 'telephone-fill',
       'title' => 'Phone',
-      'value' => '+971 4 123 4567',
+      'value' => '+971 50 124 0180',
       'desc' => 'Talk to our experts',
       'action' => 'Call Us',
-      'link' => 'tel:+97141234567',
+      'link' => 'tel:+971501240180',
 
       'hoverBorder' => 'hover:border-brand-accent/50',
       'shadow' => 'hover:shadow-brand-accent/20',
@@ -125,10 +125,10 @@
       [
       'icon' => 'envelope-fill',
       'title' => 'Email',
-      'value' => 'hello@digitron.ae',
+      'value' => 'shuhabrahim@hotmail.com',
       'desc' => 'Detailed inquiries',
       'action' => 'Send Email',
-      'link' => 'mailto:hello@digitron.ae',
+      'link' => 'mailto:shuhabrahim@hotmail.com',
 
       'hoverBorder' => 'hover:border-brand-secondary/50',
       'shadow' => 'hover:shadow-brand-secondary/20',
@@ -505,7 +505,7 @@
             </div>
             <div>
               <h4 class="font-bold text-white mb-1">Flagship Showroom</h4>
-              <p class="text-gray-400">Computer Plaza, Ground Floor G-12<br>Dubai, UAE</p>
+              <p class="text-gray-400">Victoria building, international city 2<br>Dubai, UAE</p>
             </div>
           </div>
 

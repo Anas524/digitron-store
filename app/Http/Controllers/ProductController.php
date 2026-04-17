@@ -103,7 +103,36 @@ class ProductController extends Controller
 
         session()->put('recently_viewed', $recent);
 
-        return view('pages.product', compact('product', 'thumbs', 'mainImg', 'related', 'inWishlist'));
+        $recentIds = session()->get('recently_viewed', []);
+
+        // remove current product ONLY IF more than 1 item exists
+        if (count($recentIds) > 1) {
+            $recentIds = array_values(array_filter($recentIds, fn($id) => (int)$id !== (int)$product->id));
+        }
+
+        $recentProducts = Product::whereIn('id', $recentIds)
+            ->with(['images' => fn($q) => $q->orderByDesc('is_primary')->orderBy('sort_order')])
+            ->get()
+            ->sortBy(fn($p) => array_search($p->id, $recentIds))
+            ->take(4);
+
+        if ($recentProducts->isEmpty()) {
+            $recentProducts = Product::with(['images' => fn($q) => $q->orderByDesc('is_primary')->orderBy('sort_order')])
+                ->where('id', '!=', $product->id)
+                ->where('is_active', true)
+                ->latest()
+                ->take(4)
+                ->get();
+        }
+
+        return view('pages.product', compact(
+            'product',
+            'thumbs',
+            'mainImg',
+            'related',
+            'inWishlist',
+            'recentProducts'
+        ));
     }
 
     /**
